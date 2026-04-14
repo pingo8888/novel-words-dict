@@ -1283,6 +1283,7 @@ fn capture_selected_text_from_system() -> Option<String> {
     use arboard::Clipboard;
     use std::thread;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use windows_sys::Win32::System::DataExchange::GetClipboardSequenceNumber;
 
     let mut clipboard = Clipboard::new().ok()?;
     // Only proceed when clipboard text can be restored later.
@@ -1296,16 +1297,34 @@ fn capture_selected_text_from_system() -> Option<String> {
     );
 
     clipboard.set_text(marker.clone()).ok()?;
-    thread::sleep(Duration::from_millis(120));
+    let marker_sequence = unsafe { GetClipboardSequenceNumber() };
+    thread::sleep(Duration::from_millis(35));
     trigger_copy_shortcut();
 
     let mut captured = String::new();
-    for _ in 0..12 {
-        thread::sleep(Duration::from_millis(50));
+    let mut last_sequence = marker_sequence;
+    for _ in 0..16 {
+        thread::sleep(Duration::from_millis(15));
+        let sequence = unsafe { GetClipboardSequenceNumber() };
+        if sequence == last_sequence {
+            continue;
+        }
+        last_sequence = sequence;
         if let Ok(text) = clipboard.get_text() {
             if text != marker {
                 captured = text;
                 break;
+            }
+        }
+    }
+    if captured.is_empty() {
+        for _ in 0..8 {
+            thread::sleep(Duration::from_millis(40));
+            if let Ok(text) = clipboard.get_text() {
+                if text != marker {
+                    captured = text;
+                    break;
+                }
             }
         }
     }
@@ -1375,7 +1394,7 @@ fn start_hotkey_listener(app: AppHandle) {
                 }
             }
 
-            thread::sleep(Duration::from_millis(80));
+            thread::sleep(Duration::from_millis(20));
         }
     });
 }
@@ -1390,11 +1409,8 @@ pub fn run() {
             if window.label() != "main" {
                 return;
             }
-            if matches!(
-                event,
-                tauri::WindowEvent::Resized(_) | tauri::WindowEvent::Focused(false)
-            ) && window.is_minimized().unwrap_or(false)
-            {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
                 let _ = window.hide();
             }
         })

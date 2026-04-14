@@ -110,8 +110,19 @@ function resolveErrorMessage(error: unknown, fallback: string): string {
 async function createEditorWindow(): Promise<void> {
   const existing = await WebviewWindow.getByLabel("editor");
   if (existing) {
-    await existing.close();
-    await new Promise((resolve) => window.setTimeout(resolve, 30));
+    try {
+      await existing.emit("editor-seed-updated");
+      await existing.setAlwaysOnTop(true);
+      await existing.show();
+      await existing.setFocus();
+      return;
+    } catch {
+      try {
+        await existing.close();
+      } catch {
+        // Ignore stale window close errors.
+      }
+    }
   }
 
   const editor = new WebviewWindow("editor", {

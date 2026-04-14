@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
 type NameType = "both" | "surname" | "given" | "place";
@@ -33,6 +34,7 @@ const isGenderTypeEditable = computed(
   () => form.nameType === "surname" || form.nameType === "given",
 );
 let toastTimer: number | null = null;
+let unlistenSeedUpdated: (() => void) | null = null;
 
 function resolveErrorMessage(error: unknown, fallback: string): string {
   return typeof error === "string" ? error : fallback;
@@ -150,15 +152,25 @@ async function deleteEntry(): Promise<void> {
 onMounted(async () => {
   try {
     const seedTerm = await invoke<string | null>("take_editor_seed");
-    if (seedTerm && seedTerm.trim()) {
-      await loadEntryByTerm(seedTerm);
-    }
+    await loadEntryByTerm(seedTerm ?? "");
+    unlistenSeedUpdated = await listen("editor-seed-updated", async () => {
+      try {
+        const nextSeed = await invoke<string | null>("take_editor_seed");
+        await loadEntryByTerm(nextSeed ?? "");
+      } catch (error) {
+        showToast(resolveErrorMessage(error, "刷新词条失败"), "error");
+      }
+    });
   } catch (error) {
     showToast(resolveErrorMessage(error, "初始化词条失败，请关闭后重试"), "error");
   }
 });
 
 onBeforeUnmount(() => {
+  if (unlistenSeedUpdated) {
+    unlistenSeedUpdated();
+    unlistenSeedUpdated = null;
+  }
   if (toastTimer !== null) {
     window.clearTimeout(toastTimer);
     toastTimer = null;

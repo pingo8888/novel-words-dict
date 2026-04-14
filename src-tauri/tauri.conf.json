@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "template",
+  "productName": "foreign-name-dict",
   "version": "0.1.0",
-  "identifier": "template",
+  "identifier": "com.local.foreign-name-dict",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "template",
-        "width": 800,
-        "height": 600
+        "title": "外国人名词库",
+        "width": 1320,
+        "height": 1140,
+        "resizable": false
       }
     ],
     "security": {
@@ -23,7 +24,12 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": "nsis",
+    "windows": {
+      "nsis": {
+        "template": "installer.nsi"
+      }
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

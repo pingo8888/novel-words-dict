@@ -1,0 +1,86 @@
+.editor-page {
+  box-sizing: border-box;
+  height: 100vh;
+  padding: 20px;
+  background: #f3f5f8;
+  color: #1f2937;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field input,
+.field select {
+  border: 1px solid #c6d1df;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #111827;
+  background: #ffffff;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 0;
+  border-color: #60a5fa;
+}
+
+.error-message {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.actions button {
+  min-width: 92px;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.actions .secondary {
+  color: #1f2937;
+  background: #e5e7eb;
+}
+
+.actions .primary {
+  color: #ffffff;
+  background: #2563eb;
+}

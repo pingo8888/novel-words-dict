@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    template_lib::run()
+    foreign_name_dict_lib::run()
 }

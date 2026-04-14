@@ -1,7 +1,8 @@
 use pinyin::ToPinyin;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -13,22 +14,38 @@ const DATA_FILE_NAME: &str = "entries.json";
 const LEGACY_DATA_FILE_NAME: &str = "entries.ndjson";
 const SETTINGS_FILE_NAME: &str = "settings.json";
 const DEFAULT_HOTKEY: &str = "Alt+Z";
-const PAGE_SIZE: usize = 50;
+const BUNDLED_DICT_DIR_NAME: &str = "dict";
+const ALL_DICT_ID: &str = "all";
+const ALL_DICT_NAME: &str = "所有词库";
+const CUSTOM_DICT_ID: &str = "custom";
+const CUSTOM_DICT_NAME: &str = "自定词库";
+const PAGE_SIZE: usize = 40;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 enum NameType {
+    #[default]
     Both,
     Surname,
     Given,
+    Place,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 enum GenderType {
+    #[default]
     Both,
     Male,
     Female,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+enum GenreType {
+    East,
+    #[default]
+    West,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,8 +53,68 @@ enum GenderType {
 struct NameEntry {
     term: String,
     group: String,
+    #[serde(default)]
     name_type: NameType,
+    #[serde(default)]
     gender_type: GenderType,
+    #[serde(default)]
+    genre: GenreType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DictionaryMeta {
+    dict_id: String,
+    dict_name: String,
+    #[serde(default)]
+    order: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DictionaryOption {
+    id: String,
+    name: String,
+    editable: bool,
+}
+
+#[derive(Debug, Clone)]
+struct LoadedJsonData {
+    meta: Option<DictionaryMeta>,
+    entries: Vec<NameEntry>,
+}
+
+#[derive(Debug, Clone)]
+struct DictionaryData {
+    id: String,
+    name: String,
+    editable: bool,
+    entries: Vec<NameEntry>,
+    index: HashMap<String, usize>,
+}
+
+impl DictionaryData {
+    fn new(id: String, name: String, editable: bool, mut entries: Vec<NameEntry>) -> Self {
+        for entry in &mut entries {
+            entry.term = entry.term.trim().to_string();
+            entry.group = entry.group.trim().to_string();
+        }
+        entries.retain(|entry| !entry.term.is_empty());
+        entries.sort_by(|a, b| compare_terms(&a.term, &b.term));
+
+        let mut index = HashMap::new();
+        for (idx, entry) in entries.iter().enumerate() {
+            index.insert(make_term_key(&entry.term), idx);
+        }
+
+        Self {
+            id,
+            name,
+            editable,
+            entries,
+            index,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,13 +133,13 @@ struct AppSettingsPatch {
 
 #[derive(Default)]
 struct EntryStore {
-    entries: Vec<NameEntry>,
-    index: HashMap<String, usize>,
-    data_path: Option<PathBuf>,
+    custom: DictionaryData,
+    bundled: Vec<DictionaryData>,
+    custom_data_path: Option<PathBuf>,
 }
 
 impl EntryStore {
-    fn load(&mut self, path: PathBuf) -> Result<(), String> {
+    fn load(&mut self, app: &AppHandle, path: PathBuf) -> Result<(), String> {
         let data_dir = path
             .parent()
             .ok_or_else(|| "数据目录路径无效".to_string())?
@@ -82,9 +159,9 @@ impl EntryStore {
                 continue;
             }
             match load_entries_from_json_file(&file_path) {
-                Ok(entries) => {
+                Ok(loaded) => {
                     loaded_json = true;
-                    for mut entry in entries {
+                    for mut entry in loaded.entries {
                         entry.term = entry.term.trim().to_string();
                         if entry.term.is_empty() {
                             continue;
@@ -121,10 +198,14 @@ impl EntryStore {
             }
         }
 
-        self.entries = latest.into_values().collect();
-        self.sort_entries();
-        self.rebuild_index();
-        self.data_path = Some(path.clone());
+        self.custom = DictionaryData::new(
+            CUSTOM_DICT_ID.to_string(),
+            CUSTOM_DICT_NAME.to_string(),
+            true,
+            latest.into_values().collect(),
+        );
+        self.bundled = self.load_bundled_dictionaries(app);
+        self.custom_data_path = Some(path.clone());
 
         if !path.exists() {
             self.persist()?;
@@ -133,24 +214,33 @@ impl EntryStore {
     }
 
     fn query(&self, request: &QueryRequest) -> QueryResponse {
-        let initial = request
-            .initial
+        let dict_filter = request
+            .dict_id
+            .as_deref()
+            .unwrap_or(ALL_DICT_ID)
+            .trim()
+            .to_ascii_lowercase();
+        let genre_type = request
+            .genre_type
             .as_deref()
             .unwrap_or("all")
             .trim()
-            .to_ascii_uppercase();
+            .to_ascii_lowercase();
         let name_type = request
             .name_type
             .as_deref()
             .unwrap_or("all")
             .trim()
             .to_ascii_lowercase();
-        let gender_type = request
+        let mut gender_type = request
             .gender_type
             .as_deref()
             .unwrap_or("all")
             .trim()
             .to_ascii_lowercase();
+        if name_type != "surname" && name_type != "given" {
+            gender_type = "all".to_string();
+        }
         let keyword = request
             .keyword
             .as_deref()
@@ -159,13 +249,12 @@ impl EntryStore {
             .to_lowercase();
 
         let mut matched = self
-            .entries
-            .iter()
-            .filter(|entry| matches_initial_filter(&initial, &entry.term))
+            .collect_query_items(dict_filter.as_str())
+            .into_iter()
+            .filter(|entry| matches_genre_filter(&genre_type, entry.genre))
             .filter(|entry| matches_name_type_filter(&name_type, entry.name_type))
             .filter(|entry| matches_gender_type_filter(&gender_type, entry.gender_type))
-            .filter(|entry| matches_keyword_filter(&keyword, entry))
-            .cloned()
+            .filter(|entry| matches_query_item_keyword(&keyword, entry))
             .collect::<Vec<_>>();
 
         matched.sort_by(|a, b| compare_terms(&a.term, &b.term));
@@ -183,7 +272,7 @@ impl EntryStore {
         QueryResponse {
             items,
             total,
-            total_all: self.entries.len(),
+            total_all: self.total_entries_merged_all(),
             page,
             page_count,
         }
@@ -191,9 +280,10 @@ impl EntryStore {
 
     fn get_entry(&self, term: &str) -> Option<NameEntry> {
         let key = make_term_key(term);
-        self.index
+        self.custom
+            .index
             .get(&key)
-            .and_then(|idx| self.entries.get(*idx))
+            .and_then(|idx| self.custom.entries.get(*idx))
             .cloned()
     }
 
@@ -205,36 +295,52 @@ impl EntryStore {
         }
 
         let key = make_term_key(&entry.term);
-        if let Some(existing_idx) = self.index.get(&key).copied() {
-            self.entries[existing_idx] = entry;
+        if let Some(existing_idx) = self.custom.index.get(&key).copied() {
+            self.custom.entries[existing_idx] = entry;
         } else {
-            self.entries.push(entry);
+            self.custom.entries.push(entry);
         }
 
-        self.sort_entries();
-        self.rebuild_index();
+        self.sort_custom_entries();
+        self.rebuild_custom_index();
+        self.persist()
+    }
+
+    fn delete(&mut self, term: &str) -> Result<(), String> {
+        let key = make_term_key(term);
+        let Some(existing_idx) = self.custom.index.get(&key).copied() else {
+            return Err("词条不存在".to_string());
+        };
+
+        self.custom.entries.remove(existing_idx);
+        self.sort_custom_entries();
+        self.rebuild_custom_index();
         self.persist()
     }
 
     fn persist(&self) -> Result<(), String> {
         let path = self
-            .data_path
+            .custom_data_path
             .as_ref()
             .ok_or_else(|| "数据文件路径未初始化".to_string())?;
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent).map_err(|err| format!("创建数据目录失败: {err}"))?;
         }
-        let out = if self.entries.is_empty() {
-            "[]".to_string()
-        } else {
-            let mut lines = Vec::with_capacity(self.entries.len());
-            for entry in &self.entries {
-                let line =
-                    serde_json::to_string(entry).map_err(|err| format!("序列化词条失败: {err}"))?;
-                lines.push(line);
-            }
-            format!("[\n{}\n]", lines.join(",\n"))
+        let mut lines = Vec::with_capacity(self.custom.entries.len() + 1);
+        let header = DictionaryMeta {
+            dict_id: CUSTOM_DICT_ID.to_string(),
+            dict_name: CUSTOM_DICT_NAME.to_string(),
+            order: None,
         };
+        lines.push(
+            serde_json::to_string(&header).map_err(|err| format!("序列化词库元数据失败: {err}"))?,
+        );
+        for entry in &self.custom.entries {
+            let line =
+                serde_json::to_string(entry).map_err(|err| format!("序列化词条失败: {err}"))?;
+            lines.push(line);
+        }
+        let out = format!("[\n{}\n]", lines.join(",\n"));
 
         let temp_path = path.with_extension("json.tmp");
         fs::write(&temp_path, out).map_err(|err| format!("写入临时文件失败: {err}"))?;
@@ -246,14 +352,184 @@ impl EntryStore {
         Ok(())
     }
 
-    fn sort_entries(&mut self) {
-        self.entries.sort_by(|a, b| compare_terms(&a.term, &b.term));
+    fn sort_custom_entries(&mut self) {
+        self.custom
+            .entries
+            .sort_by(|a, b| compare_terms(&a.term, &b.term));
     }
 
-    fn rebuild_index(&mut self) {
-        self.index.clear();
-        for (idx, entry) in self.entries.iter().enumerate() {
-            self.index.insert(make_term_key(&entry.term), idx);
+    fn rebuild_custom_index(&mut self) {
+        self.custom.index.clear();
+        for (idx, entry) in self.custom.entries.iter().enumerate() {
+            self.custom.index.insert(make_term_key(&entry.term), idx);
+        }
+    }
+
+    fn list_dictionaries(&self) -> Vec<DictionaryOption> {
+        let mut items = Vec::with_capacity(self.bundled.len() + 2);
+        items.push(DictionaryOption {
+            id: ALL_DICT_ID.to_string(),
+            name: ALL_DICT_NAME.to_string(),
+            editable: false,
+        });
+        items.push(DictionaryOption {
+            id: self.custom.id.clone(),
+            name: self.custom.name.clone(),
+            editable: self.custom.editable,
+        });
+        for dict in &self.bundled {
+            items.push(DictionaryOption {
+                id: dict.id.clone(),
+                name: dict.name.clone(),
+                editable: dict.editable,
+            });
+        }
+        items
+    }
+
+    fn total_entries_merged_all(&self) -> usize {
+        let mut seen = HashSet::new();
+        for entry in &self.custom.entries {
+            seen.insert(make_term_key(&entry.term));
+        }
+        for dict in &self.bundled {
+            for entry in &dict.entries {
+                seen.insert(make_term_key(&entry.term));
+            }
+        }
+        seen.len()
+    }
+
+    fn select_dictionary(&self, dict_id: &str) -> &DictionaryData {
+        if dict_id.trim().eq_ignore_ascii_case(CUSTOM_DICT_ID) {
+            return &self.custom;
+        }
+        self.bundled
+            .iter()
+            .find(|dict| dict.id.eq_ignore_ascii_case(dict_id.trim()))
+            .unwrap_or(&self.custom)
+    }
+
+    fn collect_query_items(&self, dict_filter: &str) -> Vec<QueryItem> {
+        if dict_filter.eq_ignore_ascii_case(ALL_DICT_ID) {
+            return self.collect_query_items_all();
+        }
+        let selected_dict = self.select_dictionary(dict_filter);
+        self.collect_query_items_from_dict(selected_dict)
+    }
+
+    fn collect_query_items_all(&self) -> Vec<QueryItem> {
+        let mut out = Vec::new();
+        let mut seen = HashSet::new();
+
+        for item in self.collect_query_items_from_dict(&self.custom) {
+            seen.insert(make_term_key(&item.term));
+            out.push(item);
+        }
+        for dict in &self.bundled {
+            for item in self.collect_query_items_from_dict(dict) {
+                let key = make_term_key(&item.term);
+                if seen.contains(&key) {
+                    continue;
+                }
+                seen.insert(key);
+                out.push(item);
+            }
+        }
+        out
+    }
+
+    fn collect_query_items_from_dict(&self, dict: &DictionaryData) -> Vec<QueryItem> {
+        dict.entries
+            .iter()
+            .map(|entry| QueryItem {
+                term: entry.term.clone(),
+                group: entry.group.clone(),
+                name_type: entry.name_type,
+                gender_type: entry.gender_type,
+                genre: entry.genre,
+                dict_id: dict.id.clone(),
+                dict_name: dict.name.clone(),
+                editable: dict.editable,
+            })
+            .collect()
+    }
+
+    fn load_bundled_dictionaries(&self, app: &AppHandle) -> Vec<DictionaryData> {
+        let mut result: Vec<(i32, usize, DictionaryData)> = Vec::new();
+        let mut used_ids = HashSet::new();
+        let Some(dict_dir) = resolve_bundled_dict_dir(app) else {
+            return Vec::new();
+        };
+        let mut files = match collect_json_files(&dict_dir) {
+            Ok(value) => value,
+            Err(err) => {
+                eprintln!("读取内置词库目录失败 {}: {err}", dict_dir.display());
+                return Vec::new();
+            }
+        };
+        files.sort();
+        for (file_index, file) in files.into_iter().enumerate() {
+            if is_custom_entries_file(&file) {
+                continue;
+            }
+            let loaded = match load_entries_from_json_file(&file) {
+                Ok(value) => value,
+                Err(err) => {
+                    eprintln!("忽略无效内置词库文件 {}: {err}", file.display());
+                    continue;
+                }
+            };
+            let fallback_id = file
+                .file_stem()
+                .and_then(|name| name.to_str())
+                .unwrap_or("bundled")
+                .trim()
+                .to_string();
+            let declared_order = loaded
+                .meta
+                .as_ref()
+                .and_then(|meta| meta.order)
+                .unwrap_or(i32::MAX);
+            let mut id = loaded
+                .meta
+                .as_ref()
+                .map(|meta| sanitize_dict_id(&meta.dict_id))
+                .filter(|value| !value.is_empty())
+                .unwrap_or_else(|| sanitize_dict_id(&fallback_id));
+            if id.is_empty() || id == CUSTOM_DICT_ID {
+                id = format!("bundled-{}", sanitize_dict_id(&fallback_id));
+            }
+            while used_ids.contains(&id) {
+                id.push('1');
+            }
+            used_ids.insert(id.clone());
+
+            let name = loaded
+                .meta
+                .as_ref()
+                .map(|meta| meta.dict_name.trim().to_string())
+                .filter(|value| !value.is_empty())
+                .unwrap_or_else(|| fallback_id.clone());
+            result.push((
+                declared_order,
+                file_index,
+                DictionaryData::new(id, name, false, loaded.entries),
+            ));
+        }
+        result.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+        result.into_iter().map(|(_, _, dict)| dict).collect()
+    }
+}
+
+impl Default for DictionaryData {
+    fn default() -> Self {
+        Self {
+            id: CUSTOM_DICT_ID.to_string(),
+            name: CUSTOM_DICT_NAME.to_string(),
+            editable: true,
+            entries: Vec::new(),
+            index: HashMap::new(),
         }
     }
 }
@@ -279,11 +555,14 @@ fn collect_json_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
     Ok(files)
 }
 
-fn load_entries_from_json_file(path: &Path) -> Result<Vec<NameEntry>, String> {
+fn load_entries_from_json_file(path: &Path) -> Result<LoadedJsonData, String> {
     let text = fs::read_to_string(path).map_err(|err| format!("读取文件失败: {err}"))?;
     let trimmed = text.trim();
     if trimmed.is_empty() {
-        return Ok(Vec::new());
+        return Ok(LoadedJsonData {
+            meta: None,
+            entries: Vec::new(),
+        });
     }
 
     let value: serde_json::Value =
@@ -291,27 +570,31 @@ fn load_entries_from_json_file(path: &Path) -> Result<Vec<NameEntry>, String> {
     parse_entries_from_json_value(value)
 }
 
-fn parse_entries_from_json_value(value: serde_json::Value) -> Result<Vec<NameEntry>, String> {
+fn parse_entries_from_json_value(value: serde_json::Value) -> Result<LoadedJsonData, String> {
     match value {
         serde_json::Value::Array(items) => {
+            let mut meta = None;
             let mut out = Vec::new();
-            let item_count = items.len();
-            for item in items {
+            let mut non_meta_count = 0;
+            for (idx, item) in items.into_iter().enumerate() {
+                if idx == 0 {
+                    if let Some(found_meta) = parse_dict_meta(&item) {
+                        meta = Some(found_meta);
+                        continue;
+                    }
+                }
+                non_meta_count += 1;
                 if let Ok(entry) = serde_json::from_value::<NameEntry>(item) {
                     out.push(entry);
                 }
             }
-            if item_count > 0 && out.is_empty() {
+            if non_meta_count > 0 && out.is_empty() {
                 return Err("JSON 数组中未找到有效词条对象".to_string());
             }
-            Ok(out)
+            Ok(LoadedJsonData { meta, entries: out })
         }
         serde_json::Value::Object(map) => {
-            if let Ok(entry) =
-                serde_json::from_value::<NameEntry>(serde_json::Value::Object(map.clone()))
-            {
-                return Ok(vec![entry]);
-            }
+            let meta = parse_dict_meta(&serde_json::Value::Object(map.clone()));
             if let Some(entries_value) = map.get("entries") {
                 if let serde_json::Value::Array(items) = entries_value {
                     let mut out = Vec::new();
@@ -324,13 +607,159 @@ fn parse_entries_from_json_value(value: serde_json::Value) -> Result<Vec<NameEnt
                     if item_count > 0 && out.is_empty() {
                         return Err("entries 数组中未找到有效词条对象".to_string());
                     }
-                    return Ok(out);
+                    return Ok(LoadedJsonData { meta, entries: out });
                 }
-                return Ok(Vec::new());
+                return Ok(LoadedJsonData {
+                    meta,
+                    entries: Vec::new(),
+                });
             }
-            Ok(Vec::new())
+            if let Ok(entry) = serde_json::from_value::<NameEntry>(serde_json::Value::Object(map)) {
+                return Ok(LoadedJsonData {
+                    meta: None,
+                    entries: vec![entry],
+                });
+            }
+            Ok(LoadedJsonData {
+                meta,
+                entries: Vec::new(),
+            })
         }
-        _ => Ok(Vec::new()),
+        _ => Ok(LoadedJsonData {
+            meta: None,
+            entries: Vec::new(),
+        }),
+    }
+}
+
+fn parse_dict_meta(value: &serde_json::Value) -> Option<DictionaryMeta> {
+    let Ok(meta) = serde_json::from_value::<DictionaryMeta>(value.clone()) else {
+        return None;
+    };
+    let id = sanitize_dict_id(meta.dict_id.as_str());
+    let name = meta.dict_name.trim().to_string();
+    if id.is_empty() || name.is_empty() {
+        return None;
+    }
+    Some(DictionaryMeta {
+        dict_id: id,
+        dict_name: name,
+        order: meta.order,
+    })
+}
+
+fn sanitize_dict_id(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for ch in value.trim().chars() {
+        if ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' {
+            out.push(ch.to_ascii_lowercase());
+        }
+    }
+    out
+}
+
+fn resolve_bundled_dict_dir(app: &AppHandle) -> Option<PathBuf> {
+    let mut candidates = Vec::new();
+    if let Ok(exe_path) = env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            candidates.push(exe_dir.join(BUNDLED_DICT_DIR_NAME));
+        }
+    }
+    if let Ok(current_dir) = env::current_dir() {
+        candidates.push(current_dir.join(BUNDLED_DICT_DIR_NAME));
+        if let Some(parent) = current_dir.parent() {
+            candidates.push(parent.join(BUNDLED_DICT_DIR_NAME));
+        }
+    }
+    if let Some(manifest_dir) = option_env!("CARGO_MANIFEST_DIR") {
+        let manifest_dir = PathBuf::from(manifest_dir);
+        candidates.push(manifest_dir.join(BUNDLED_DICT_DIR_NAME));
+        if let Some(parent) = manifest_dir.parent() {
+            candidates.push(parent.join(BUNDLED_DICT_DIR_NAME));
+        }
+    }
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        candidates.push(resource_dir.join(BUNDLED_DICT_DIR_NAME));
+    }
+    candidates
+        .into_iter()
+        .find(|path| is_valid_bundled_dict_dir(path))
+}
+
+fn is_valid_bundled_dict_dir(path: &Path) -> bool {
+    if !path.is_dir() {
+        return false;
+    }
+    let Ok(files) = collect_json_files(path) else {
+        return false;
+    };
+    for file in files {
+        if is_custom_entries_file(&file) {
+            continue;
+        }
+        if let Ok(loaded) = load_entries_from_json_file(&file) {
+            if !loaded.entries.is_empty() {
+                return true;
+            }
+            if let Some(meta) = loaded.meta {
+                if !meta.dict_id.eq_ignore_ascii_case(CUSTOM_DICT_ID) {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+fn is_custom_entries_file(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.eq_ignore_ascii_case(DATA_FILE_NAME))
+}
+
+fn sync_bundled_dict_to_install_dir(app: &AppHandle) {
+    let Ok(exe_path) = env::current_exe() else {
+        return;
+    };
+    let Some(exe_dir) = exe_path.parent() else {
+        return;
+    };
+    let target_dir = exe_dir.join(BUNDLED_DICT_DIR_NAME);
+    if target_dir.is_dir() {
+        return;
+    }
+
+    let Ok(resource_dir) = app.path().resource_dir() else {
+        return;
+    };
+    let source_dir = resource_dir.join(BUNDLED_DICT_DIR_NAME);
+    if !source_dir.is_dir() {
+        return;
+    }
+    if let Err(err) = fs::create_dir_all(&target_dir) {
+        eprintln!("创建安装目录词库失败 {}: {err}", target_dir.display());
+        return;
+    }
+
+    match collect_json_files(&source_dir) {
+        Ok(files) => {
+            for file in files {
+                let Some(name) = file.file_name() else {
+                    continue;
+                };
+                let target_file = target_dir.join(name);
+                if let Err(err) = fs::copy(&file, &target_file) {
+                    eprintln!(
+                        "复制内置词库失败 {} -> {}: {err}",
+                        file.display(),
+                        target_file.display()
+                    );
+                }
+            }
+        }
+        Err(err) => {
+            eprintln!("读取内置资源词库失败 {}: {err}", source_dir.display());
+        }
     }
 }
 
@@ -366,17 +795,31 @@ struct HotkeyState(Mutex<String>);
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct QueryRequest {
-    initial: Option<String>,
+    dict_id: Option<String>,
+    genre_type: Option<String>,
     name_type: Option<String>,
     gender_type: Option<String>,
     keyword: Option<String>,
     page: Option<usize>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct QueryItem {
+    term: String,
+    group: String,
+    name_type: NameType,
+    gender_type: GenderType,
+    genre: GenreType,
+    dict_id: String,
+    dict_name: String,
+    editable: bool,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct QueryResponse {
-    items: Vec<NameEntry>,
+    items: Vec<QueryItem>,
     total: usize,
     total_all: usize,
     page: usize,
@@ -414,6 +857,15 @@ fn query_entries(state: State<AppState>, request: QueryRequest) -> Result<QueryR
 }
 
 #[tauri::command]
+fn list_dictionaries(state: State<AppState>) -> Result<Vec<DictionaryOption>, String> {
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "读取词库失败：状态锁不可用".to_string())?;
+    Ok(store.list_dictionaries())
+}
+
+#[tauri::command]
 fn get_entry(state: State<AppState>, term: String) -> Result<Option<NameEntry>, String> {
     let store = state
         .store
@@ -434,6 +886,25 @@ fn upsert_entry(app: AppHandle, state: State<AppState>, entry: NameEntry) -> Res
     }
 
     let _ = app.emit_to("main", "entry-updated", term_for_event);
+    Ok(())
+}
+
+#[tauri::command]
+fn delete_entry(app: AppHandle, state: State<AppState>, term: String) -> Result<(), String> {
+    let trimmed_term = term.trim().to_string();
+    if trimmed_term.is_empty() {
+        return Err("词条不能为空".to_string());
+    }
+
+    {
+        let mut store = state
+            .store
+            .lock()
+            .map_err(|_| "删除词条失败：状态锁不可用".to_string())?;
+        store.delete(&trimmed_term)?;
+    }
+
+    let _ = app.emit_to("main", "entry-updated", trimmed_term);
     Ok(())
 }
 
@@ -504,7 +975,7 @@ fn save_app_settings(
             .store
             .lock()
             .map_err(|_| "保存设置失败：词库状态锁不可用".to_string())?;
-        store.load(data_path)?;
+        store.load(&app, data_path)?;
     }
 
     let normalized_settings = AppSettings {
@@ -539,14 +1010,13 @@ fn make_term_key(term: &str) -> String {
     normalize_text(term.trim())
 }
 
-fn matches_initial_filter(initial: &str, term: &str) -> bool {
-    if initial == "ALL" || initial.is_empty() {
-        return true;
+fn matches_genre_filter(filter: &str, value: GenreType) -> bool {
+    match filter {
+        "all" => true,
+        "east" => value == GenreType::East,
+        "west" => value == GenreType::West,
+        _ => true,
     }
-    let Some(first) = leading_alpha_initial(term) else {
-        return false;
-    };
-    initial.chars().next().is_some_and(|target| target == first)
 }
 
 fn matches_name_type_filter(filter: &str, value: NameType) -> bool {
@@ -554,6 +1024,7 @@ fn matches_name_type_filter(filter: &str, value: NameType) -> bool {
         "all" => true,
         "surname" => value == NameType::Surname || value == NameType::Both,
         "given" => value == NameType::Given || value == NameType::Both,
+        "place" => value == NameType::Place || value == NameType::Both,
         "both" => value == NameType::Both,
         _ => true,
     }
@@ -569,7 +1040,7 @@ fn matches_gender_type_filter(filter: &str, value: GenderType) -> bool {
     }
 }
 
-fn matches_keyword_filter(keyword: &str, entry: &NameEntry) -> bool {
+fn matches_query_item_keyword(keyword: &str, entry: &QueryItem) -> bool {
     if keyword.is_empty() {
         return true;
     }
@@ -934,13 +1405,14 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let app_handle = app.handle();
+            sync_bundled_dict_to_install_dir(&app_handle);
             let loaded_settings = load_app_settings(&app_handle)?;
             let dict_dir = PathBuf::from(loaded_settings.dict_dir.as_str());
             fs::create_dir_all(&dict_dir).map_err(|err| format!("创建词库目录失败: {err}"))?;
             let data_path = resolve_entries_file_path(&dict_dir);
             let app_state = app.state::<AppState>();
             if let Ok(mut store) = app_state.store.lock() {
-                if let Err(err) = store.load(data_path) {
+                if let Err(err) = store.load(&app_handle, data_path) {
                     return Err(std::io::Error::other(err).into());
                 }
             } else {
@@ -974,8 +1446,10 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             query_entries,
+            list_dictionaries,
             get_entry,
             upsert_entry,
+            delete_entry,
             get_app_settings,
             save_app_settings,
             open_editor_window,

@@ -2,19 +2,26 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { Lock, Mars, Settings, Venus, VenusAndMars } from "lucide-vue-next";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
-type NameType = "both" | "surname" | "given";
+type NameType = "both" | "surname" | "given" | "place";
 type GenderType = "both" | "male" | "female";
+type GenreType = "east" | "west";
+type ToastTone = "info" | "error";
 type NameTypeFilter = "all" | NameType;
 type GenderTypeFilter = "all" | GenderType;
-type InitialFilter = "all" | string;
+type GenreTypeFilter = "all" | GenreType;
 
 interface NameEntry {
   term: string;
   group: string;
   nameType: NameType;
   genderType: GenderType;
+  genre: GenreType;
+  dictId: string;
+  dictName: string;
+  editable: boolean;
 }
 
 interface QueryResponse {
@@ -26,11 +33,18 @@ interface QueryResponse {
 }
 
 interface QueryRequest {
-  initial: InitialFilter;
+  dictId: string;
+  genreType: GenreTypeFilter;
   nameType: NameTypeFilter;
   genderType: GenderTypeFilter;
   keyword: string;
   page: number;
+}
+
+interface DictionaryOption {
+  id: string;
+  name: string;
+  editable: boolean;
 }
 
 interface AppSettingsResponse {
@@ -40,7 +54,8 @@ interface AppSettingsResponse {
 }
 
 const filters = reactive<QueryRequest>({
-  initial: "all",
+  dictId: "all",
+  genreType: "all",
   nameType: "all",
   genderType: "all",
   keyword: "",
@@ -48,13 +63,16 @@ const filters = reactive<QueryRequest>({
 });
 
 const loading = ref(false);
-const errorMessage = ref("");
-const openEditorError = ref("");
-const copyTipMessage = ref("");
+const queryButtonLoading = ref(false);
+const toastMessage = ref("");
+const toastTone = ref<ToastTone>("info");
 const activeHotkey = ref("Alt+Z");
+const dictionaries = ref<DictionaryOption[]>([
+  { id: "all", name: "所有词库", editable: false },
+  { id: "custom", name: "自定词库", editable: true },
+]);
 const settingsVisible = ref(false);
 const settingsSaving = ref(false);
-const settingsError = ref("");
 const projectDataDir = ref("");
 const settingsForm = reactive({
   dictDir: "",
@@ -68,23 +86,26 @@ const result = ref<QueryResponse>({
   pageCount: 1,
 });
 
-const initials = Array.from({ length: 26 }, (_, index) =>
-  String.fromCharCode(65 + index),
-);
-
 const renderItems = computed<(NameEntry | null)[]>(() => {
   const filled: (NameEntry | null)[] = [...result.value.items];
-  while (filled.length < 50) {
+  while (filled.length < 40) {
     filled.push(null);
   }
   return filled;
 });
 
 const pageDisplay = computed(() => `${result.value.page}/${result.value.pageCount}`);
+const isGenderFilterEditable = computed(
+  () => filters.nameType === "surname" || filters.nameType === "given",
+);
 
 let unlistenEntryUpdated: (() => void) | null = null;
 let unlistenEditorOpenRequest: (() => void) | null = null;
-let copyTipTimer: number | null = null;
+let toastTimer: number | null = null;
+
+function resolveErrorMessage(error: unknown, fallback: string): string {
+  return typeof error === "string" ? error : fallback;
+}
 
 async function createEditorWindow(): Promise<void> {
   const existing = await WebviewWindow.getByLabel("editor");
@@ -97,9 +118,9 @@ async function createEditorWindow(): Promise<void> {
     url: "/editor.html",
     title: "编辑词条",
     width: 540,
-    height: 450,
+    height: 400,
     minWidth: 540,
-    minHeight: 450,
+    minHeight: 400,
     resizable: false,
     center: true,
     focus: true,
@@ -131,12 +152,16 @@ async function createEditorWindow(): Promise<void> {
 }
 
 async function query(resetPage = false): Promise<void> {
+  if (loading.value) {
+    return;
+  }
+
   if (resetPage) {
     filters.page = 1;
   }
 
   loading.value = true;
-  errorMessage.value = "";
+  queryButtonLoading.value = resetPage;
   try {
     const response = await invoke<QueryResponse>("query_entries", {
       request: { ...filters },
@@ -144,10 +169,10 @@ async function query(resetPage = false): Promise<void> {
     result.value = response;
     filters.page = response.page;
   } catch (error) {
-    errorMessage.value =
-      typeof error === "string" ? error : "查询失败，请稍后重试";
+    showToast(resolveErrorMessage(error, "查询失败，请稍后重试"), "error");
   } finally {
     loading.value = false;
+    queryButtonLoading.value = false;
   }
 }
 
@@ -167,19 +192,20 @@ async function nextPage(): Promise<void> {
   await query(false);
 }
 
-async function openEditor(term: string): Promise<void> {
-  openEditorError.value = "";
+async function openEditor(entry: NameEntry): Promise<void> {
+  if (!entry.editable) {
+    showToast("内置词库词条不可编辑", "error");
+    return;
+  }
   try {
-    await invoke("set_editor_seed", { term });
+    await invoke("set_editor_seed", { term: entry.term });
     await createEditorWindow();
   } catch (error) {
-    openEditorError.value =
-      typeof error === "string" ? error : "打开编辑窗口失败";
+    showToast(resolveErrorMessage(error, "打开编辑窗口失败"), "error");
   }
 }
 
 async function copyTerm(term: string): Promise<void> {
-  openEditorError.value = "";
   const text = term.trim();
   if (!text) {
     return;
@@ -188,7 +214,7 @@ async function copyTerm(term: string): Promise<void> {
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
-      showCopyTip(`复制：${text}`);
+      showToast(`复制：${text}`);
       return;
     }
 
@@ -203,21 +229,21 @@ async function copyTerm(term: string): Promise<void> {
     if (!success) {
       throw new Error("copy failed");
     }
-    showCopyTip(`复制：${text}`);
+    showToast(`复制：${text}`);
   } catch (error) {
-    openEditorError.value =
-      typeof error === "string" ? error : "复制词条失败";
+    showToast(resolveErrorMessage(error, "复制词条失败"), "error");
   }
 }
 
-function showCopyTip(message: string): void {
-  copyTipMessage.value = message;
-  if (copyTipTimer !== null) {
-    window.clearTimeout(copyTipTimer);
+function showToast(message: string, tone: ToastTone = "info"): void {
+  toastMessage.value = message;
+  toastTone.value = tone;
+  if (toastTimer !== null) {
+    window.clearTimeout(toastTimer);
   }
-  copyTipTimer = window.setTimeout(() => {
-    copyTipMessage.value = "";
-    copyTipTimer = null;
+  toastTimer = window.setTimeout(() => {
+    toastMessage.value = "";
+    toastTimer = null;
   }, 1800);
 }
 
@@ -228,17 +254,10 @@ function getNameTypeIcons(nameType: NameType): string[] {
   if (nameType === "given") {
     return ["名"];
   }
+  if (nameType === "place") {
+    return ["地"];
+  }
   return ["姓", "名"];
-}
-
-function getGenderIcon(genderType: GenderType): string {
-  if (genderType === "male") {
-    return "♂";
-  }
-  if (genderType === "female") {
-    return "♀";
-  }
-  return "⚥";
 }
 
 function getGenderIconClass(genderType: GenderType): string {
@@ -267,14 +286,26 @@ async function loadSettings(): Promise<void> {
   activeHotkey.value = settings.hotkey;
 }
 
+async function loadDictionaries(): Promise<void> {
+  const items = await invoke<DictionaryOption[]>("list_dictionaries");
+  const normalized = items.length
+    ? items
+    : [
+        { id: "all", name: "所有词库", editable: false },
+        { id: "custom", name: "自定词库", editable: true },
+      ];
+  dictionaries.value = normalized;
+  if (!normalized.some((item) => item.id === filters.dictId)) {
+    filters.dictId = normalized[0].id;
+  }
+}
+
 async function openSettings(): Promise<void> {
-  settingsError.value = "";
   try {
     await loadSettings();
     settingsVisible.value = true;
   } catch (error) {
-    openEditorError.value =
-      typeof error === "string" ? error : "读取设置失败";
+    showToast(resolveErrorMessage(error, "读取设置失败"), "error");
   }
 }
 
@@ -283,12 +314,10 @@ function closeSettings(): void {
     return;
   }
   settingsVisible.value = false;
-  settingsError.value = "";
 }
 
 async function saveSettings(): Promise<void> {
   settingsSaving.value = true;
-  settingsError.value = "";
   try {
     const saved = await invoke<AppSettingsResponse>("save_app_settings", {
       request: {
@@ -301,10 +330,10 @@ async function saveSettings(): Promise<void> {
     settingsForm.hotkey = saved.hotkey;
     activeHotkey.value = saved.hotkey;
     settingsVisible.value = false;
+    await loadDictionaries();
     await query(true);
   } catch (error) {
-    settingsError.value =
-      typeof error === "string" ? error : "保存设置失败";
+    showToast(resolveErrorMessage(error, "保存设置失败"), "error");
   } finally {
     settingsSaving.value = false;
   }
@@ -313,9 +342,9 @@ async function saveSettings(): Promise<void> {
 onMounted(async () => {
   try {
     await loadSettings();
+    await loadDictionaries();
   } catch (error) {
-    openEditorError.value =
-      typeof error === "string" ? error : "读取设置失败";
+    showToast(resolveErrorMessage(error, "读取设置失败"), "error");
   }
   await query(true);
   unlistenEntryUpdated = await listen("entry-updated", async () => {
@@ -326,8 +355,7 @@ onMounted(async () => {
       await invoke("set_editor_seed", { term: event.payload ?? "" });
       await createEditorWindow();
     } catch (error) {
-      openEditorError.value =
-        typeof error === "string" ? error : "打开编辑窗口失败";
+      showToast(resolveErrorMessage(error, "打开编辑窗口失败"), "error");
     }
   });
 });
@@ -341,49 +369,66 @@ onBeforeUnmount(() => {
     unlistenEditorOpenRequest();
     unlistenEditorOpenRequest = null;
   }
-  if (copyTipTimer !== null) {
-    window.clearTimeout(copyTipTimer);
-    copyTipTimer = null;
+  if (toastTimer !== null) {
+    window.clearTimeout(toastTimer);
+    toastTimer = null;
   }
 });
+
+watch(
+  () => filters.nameType,
+  () => {
+    if (!isGenderFilterEditable.value && filters.genderType !== "all") {
+      filters.genderType = "all";
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
   <main class="home-page">
-    <header class="header">
-      <div class="header-main">
-        <h1>外国人名词库</h1>
-        <p class="description">
-          管理和筛选外国人名词条目，支持系统级快捷键 {{ activeHotkey }} 快速取词。
-          当前词条数：<strong>{{ result.totalAll }}</strong>
-        </p>
-      </div>
-      <button class="settings-btn" type="button" @click="openSettings">设置</button>
-    </header>
+    <div class="top-row">
+      <p class="description-inline">
+        当前词条数{{ result.totalAll }}，当前取词快捷键{{ activeHotkey }}
+      </p>
+      <button class="settings-icon-btn" type="button" title="设置" @click="openSettings">
+        <Settings :size="16" :stroke-width="2" />
+      </button>
+    </div>
 
     <section class="filters">
       <label class="field">
-        <span>首字母</span>
-        <select v-model="filters.initial">
-          <option value="all">所有</option>
-          <option v-for="letter in initials" :key="letter" :value="letter">
-            {{ letter }}
+        <span>词库</span>
+        <select v-model="filters.dictId">
+          <option v-for="item in dictionaries" :key="item.id" :value="item.id">
+            {{ item.name }}
           </option>
         </select>
       </label>
 
       <label class="field">
-        <span>姓氏类型</span>
+        <span>风格</span>
+        <select v-model="filters.genreType">
+          <option value="all">所有</option>
+          <option value="east">东方</option>
+          <option value="west">西方</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>名词类型</span>
         <select v-model="filters.nameType">
           <option value="all">所有</option>
           <option value="surname">姓氏</option>
           <option value="given">名字</option>
+          <option value="place">地名</option>
         </select>
       </label>
 
       <label class="field">
         <span>性别</span>
-        <select v-model="filters.genderType">
+        <select v-model="filters.genderType" :disabled="!isGenderFilterEditable">
           <option value="all">所有</option>
           <option value="male">男性</option>
           <option value="female">女性</option>
@@ -401,30 +446,31 @@ onBeforeUnmount(() => {
         />
       </label>
 
-      <button class="query-btn" type="button" :disabled="loading" @click="query(true)">
-        {{ loading ? "查询中..." : "查询" }}
+      <button class="query-btn" type="button" :disabled="queryButtonLoading" @click="query(true)">
+        {{ queryButtonLoading ? "查询中..." : "查询" }}
       </button>
     </section>
 
     <section class="result-panel">
       <div class="result-summary">
         <span>命中词条：{{ result.total }}</span>
-        <span v-if="errorMessage" class="error-message">{{ errorMessage }}</span>
       </div>
-      <p v-if="openEditorError" class="error-message open-editor-error">{{ openEditorError }}</p>
 
       <div class="entry-grid">
         <button
           v-for="(entry, index) in renderItems"
-          :key="entry ? entry.term : `empty-${index}`"
+          :key="entry ? `${entry.dictId}-${entry.term}-${index}` : `empty-${index}`"
           class="entry-item"
           :class="{ placeholder: !entry }"
           type="button"
           :disabled="!entry"
           @click="entry && copyTerm(entry.term)"
-          @contextmenu.prevent="entry && openEditor(entry.term)"
+          @contextmenu.prevent="entry && openEditor(entry)"
         >
           <template v-if="entry">
+            <span v-if="!entry.editable" class="entry-lock-corner" title="内置词条不可编辑">
+              <Lock class="entry-lucide" :size="12" :stroke-width="2" />
+            </span>
             <div class="entry-icons">
               <span
                 v-for="icon in getNameTypeIcons(entry.nameType)"
@@ -437,7 +483,24 @@ onBeforeUnmount(() => {
                 class="entry-icon"
                 :class="getGenderIconClass(entry.genderType)"
               >
-                {{ getGenderIcon(entry.genderType) }}
+                <Mars
+                  v-if="entry.genderType === 'male'"
+                  class="entry-lucide"
+                  :size="12"
+                  :stroke-width="2"
+                />
+                <Venus
+                  v-else-if="entry.genderType === 'female'"
+                  class="entry-lucide"
+                  :size="12"
+                  :stroke-width="2"
+                />
+                <VenusAndMars
+                  v-else
+                  class="entry-lucide"
+                  :size="12"
+                  :stroke-width="2"
+                />
               </span>
             </div>
             <div class="entry-main">
@@ -463,7 +526,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <p v-if="copyTipMessage" class="copy-tip">{{ copyTipMessage }}</p>
+    <p v-if="toastMessage" class="system-tip" :class="`tone-${toastTone}`">{{ toastMessage }}</p>
 
     <div
       v-if="settingsVisible"
@@ -473,7 +536,7 @@ onBeforeUnmount(() => {
       <section class="settings-dialog">
         <h2>设置</h2>
         <label class="field">
-          <span>词库保存目录</span>
+          <span>自定词库保存目录</span>
           <input
             v-model="settingsForm.dictDir"
             type="text"
@@ -483,7 +546,7 @@ onBeforeUnmount(() => {
         </label>
 
         <label class="field">
-          <span>快捷键</span>
+          <span>界面取词快捷键</span>
           <input
             v-model="settingsForm.hotkey"
             type="text"
@@ -492,8 +555,6 @@ onBeforeUnmount(() => {
           />
           <small>当前仅支持 Alt + 单个英文字母，例如 Alt+Z。</small>
         </label>
-
-        <p v-if="settingsError" class="error-message">{{ settingsError }}</p>
 
         <div class="settings-actions">
           <button type="button" class="secondary" :disabled="settingsSaving" @click="closeSettings">

@@ -1,11 +1,5 @@
 :root {
-  font-family:
-    "Noto Serif SC",
-    "Source Han Serif SC",
-    "Songti SC",
-    "STSong",
-    "SimSun",
-    serif;
+  font-family: "SimSun", "NSimSun", "Songti SC", serif;
   font-size: 15px;
   line-height: 1.5;
   font-weight: 400;

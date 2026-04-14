@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "foreign-name-dict",
+  "productName": "name-dict",
   "version": "0.1.0",
-  "identifier": "com.local.foreign-name-dict",
+  "identifier": "com.local.name-dict",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "外国人名词库",
+        "title": "小说词库",
         "width": 1320,
         "height": 1140,
         "resizable": false
@@ -25,6 +25,9 @@
   "bundle": {
     "active": true,
     "targets": "nsis",
+    "resources": [
+      "../dict"
+    ],
     "windows": {
       "nsis": {
         "template": "installer.nsi"

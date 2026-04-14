@@ -635,6 +635,13 @@ Section Install
     File /a "/oname={{this.[1]}}" "{{no-escape @key}}"
   {{/each}}
 
+  ; Mirror bundled dictionaries from resources (_up_) to install root dict directory.
+  CreateDirectory "$INSTDIR\dict"
+  IfFileExists "$INSTDIR\_up_\dict\*.*" 0 +2
+    CopyFiles /SILENT "$INSTDIR\_up_\dict\*.*" "$INSTDIR\dict"
+  ; Cleanup copied resource folder so final install layout does not expose _up_/dict.
+  RMDir /r "$INSTDIR\_up_"
+
   ; Copy external binaries
   {{#each binaries}}
     File /a "/oname={{this}}" "{{no-escape @key}}"
@@ -764,6 +771,9 @@ Section Uninstall
   ; Delete the app directory and its content from disk
   ; Copy main executable
   Delete "$INSTDIR\${MAINBINARYNAME}.exe"
+
+  ; Delete mirrored bundled dictionary directory.
+  RMDir /r "$INSTDIR\dict"
 
   ; Delete resources
   {{#each resources}}

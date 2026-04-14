@@ -66,6 +66,17 @@ h1 {
   gap: 10px;
 }
 
+.bundled-exists-tip {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
 .actions button {
   min-width: 92px;
   border: 0;

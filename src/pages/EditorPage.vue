@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
-type NameType = "both" | "surname" | "given" | "place";
+type NameType = "both" | "surname" | "given" | "place" | "gear" | "item" | "skill";
 type GenderType = "both" | "male" | "female";
 type GenreType = "east" | "west";
 type ToastTone = "info" | "error";
@@ -23,6 +23,7 @@ const toastMessage = ref("");
 const toastTone = ref<ToastTone>("info");
 const editorModeLabel = ref("[添加]");
 const editingTerm = ref("");
+const bundledExistsDictName = ref("");
 const form = reactive<NameEntry>({
   term: "",
   genre: "west",
@@ -35,6 +36,7 @@ const isGenderTypeEditable = computed(
 );
 let toastTimer: number | null = null;
 let unlistenSeedUpdated: (() => void) | null = null;
+let bundledHintSeq = 0;
 
 function resolveErrorMessage(error: unknown, fallback: string): string {
   return typeof error === "string" ? error : fallback;
@@ -62,10 +64,35 @@ function resetFormWithTerm(term: string): void {
   editorModeLabel.value = "[添加]";
 }
 
+async function refreshBundledExistsHint(term: string): Promise<void> {
+  const normalizedTerm = term.trim();
+  if (!normalizedTerm || editingTerm.value) {
+    bundledExistsDictName.value = "";
+    return;
+  }
+
+  const seq = ++bundledHintSeq;
+  try {
+    const dictName = await invoke<string | null>("get_bundled_entry_dict_name", {
+      term: normalizedTerm,
+    });
+    if (seq !== bundledHintSeq) {
+      return;
+    }
+    bundledExistsDictName.value = dictName ?? "";
+  } catch {
+    if (seq !== bundledHintSeq) {
+      return;
+    }
+    bundledExistsDictName.value = "";
+  }
+}
+
 async function loadEntryByTerm(term: string): Promise<void> {
   const normalizedTerm = term.trim();
   if (!normalizedTerm) {
     resetFormWithTerm("");
+    bundledExistsDictName.value = "";
     return;
   }
 
@@ -81,8 +108,11 @@ async function loadEntryByTerm(term: string): Promise<void> {
         : "both";
     editingTerm.value = existing.term;
     editorModeLabel.value = "[修改]";
+    bundledExistsDictName.value = "";
+    bundledHintSeq += 1;
   } else {
     resetFormWithTerm(normalizedTerm);
+    await refreshBundledExistsHint(normalizedTerm);
   }
 }
 
@@ -187,6 +217,13 @@ watch(
   { immediate: true },
 );
 
+watch(
+  () => form.term,
+  (value) => {
+    void refreshBundledExistsHint(value);
+  },
+);
+
 </script>
 
 <template>
@@ -228,6 +265,9 @@ watch(
           <option value="surname">姓氏</option>
           <option value="given">名字</option>
           <option value="place">地名</option>
+          <option value="gear">装备</option>
+          <option value="item">物品</option>
+          <option value="skill">技能</option>
         </select>
       </label>
 
@@ -243,6 +283,9 @@ watch(
 
     <div class="actions">
       <div class="actions-left">
+        <p v-if="!editingTerm && bundledExistsDictName" class="bundled-exists-tip">
+          [{{ bundledExistsDictName }}]已有此词条
+        </p>
         <button
           v-if="editingTerm"
           class="danger"

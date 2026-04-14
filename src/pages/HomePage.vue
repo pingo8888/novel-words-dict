@@ -5,7 +5,7 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { Lock, Mars, Settings, Venus, VenusAndMars } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
-type NameType = "both" | "surname" | "given" | "place";
+type NameType = "both" | "surname" | "given" | "place" | "gear" | "item" | "skill";
 type GenderType = "both" | "male" | "female";
 type GenreType = "east" | "west";
 type ToastTone = "info" | "error";
@@ -268,6 +268,15 @@ function getNameTypeIcons(nameType: NameType): string[] {
   if (nameType === "place") {
     return ["地"];
   }
+  if (nameType === "gear") {
+    return ["装"];
+  }
+  if (nameType === "item") {
+    return ["物"];
+  }
+  if (nameType === "skill") {
+    return ["技"];
+  }
   return ["姓", "名"];
 }
 
@@ -279,6 +288,10 @@ function getGenderIconClass(genderType: GenderType): string {
     return "gender-female";
   }
   return "gender-both";
+}
+
+function shouldShowGenderIcon(nameType: NameType): boolean {
+  return nameType === "surname" || nameType === "given";
 }
 
 function formatGroupLabel(group: string): string {
@@ -434,6 +447,9 @@ watch(
           <option value="surname">姓氏</option>
           <option value="given">名字</option>
           <option value="place">地名</option>
+          <option value="gear">装备</option>
+          <option value="item">物品</option>
+          <option value="skill">技能</option>
         </select>
       </label>
 
@@ -491,6 +507,7 @@ watch(
                 {{ icon }}
               </span>
               <span
+                v-if="shouldShowGenderIcon(entry.nameType)"
                 class="entry-icon"
                 :class="getGenderIconClass(entry.genderType)"
               >

@@ -29,6 +29,9 @@ enum NameType {
     Surname,
     Given,
     Place,
+    Gear,
+    Item,
+    Skill,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -285,6 +288,17 @@ impl EntryStore {
             .get(&key)
             .and_then(|idx| self.custom.entries.get(*idx))
             .cloned()
+    }
+
+    fn get_bundled_entry_dict_name(&self, term: &str) -> Option<String> {
+        let key = make_term_key(term);
+        if key.is_empty() {
+            return None;
+        }
+        self.bundled
+            .iter()
+            .find(|dict| dict.index.contains_key(&key))
+            .map(|dict| dict.name.clone())
     }
 
     fn upsert(&mut self, mut entry: NameEntry) -> Result<(), String> {
@@ -875,6 +889,18 @@ fn get_entry(state: State<AppState>, term: String) -> Result<Option<NameEntry>, 
 }
 
 #[tauri::command]
+fn get_bundled_entry_dict_name(
+    state: State<AppState>,
+    term: String,
+) -> Result<Option<String>, String> {
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "读取词条失败：状态锁不可用".to_string())?;
+    Ok(store.get_bundled_entry_dict_name(&term))
+}
+
+#[tauri::command]
 fn upsert_entry(app: AppHandle, state: State<AppState>, entry: NameEntry) -> Result<(), String> {
     let term_for_event = entry.term.trim().to_string();
     {
@@ -1025,6 +1051,9 @@ fn matches_name_type_filter(filter: &str, value: NameType) -> bool {
         "surname" => value == NameType::Surname || value == NameType::Both,
         "given" => value == NameType::Given || value == NameType::Both,
         "place" => value == NameType::Place || value == NameType::Both,
+        "gear" => value == NameType::Gear || value == NameType::Both,
+        "item" => value == NameType::Item || value == NameType::Both,
+        "skill" => value == NameType::Skill || value == NameType::Both,
         "both" => value == NameType::Both,
         _ => true,
     }
@@ -1464,6 +1493,7 @@ pub fn run() {
             query_entries,
             list_dictionaries,
             get_entry,
+            get_bundled_entry_dict_name,
             upsert_entry,
             delete_entry,
             get_app_settings,

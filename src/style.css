@@ -1,9 +1,20 @@
 :root {
-  font-family: "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", sans-serif;
+  --bg-start: #f4f7ec;
+  --bg-end: #e0ebf3;
+  --ink-main: #1d2838;
+  --ink-subtle: #5b6778;
+  --panel-bg: rgba(255, 255, 255, 0.82);
+  --panel-border: rgba(29, 40, 56, 0.12);
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --card-shadow: 0 14px 26px rgba(29, 40, 56, 0.1);
+  --accent: #305f96;
+  --accent-strong: #244978;
+  --danger: #8f2930;
+  font-family: "Noto Serif SC", "STZhongsong", "Georgia", serif;
   font-size: 15px;
   line-height: 1.5;
   font-weight: 400;
-  color: #111827;
+  color: var(--ink-main);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -20,6 +31,12 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+body {
+  color: var(--ink-main);
+  background: radial-gradient(circle at 80% 0%, rgba(85, 131, 189, 0.24), transparent 45%),
+    linear-gradient(140deg, var(--bg-start), var(--bg-end));
 }
 
 button,

@@ -10,7 +10,8 @@
     "tauri": "tauri",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "clean:custom-duplicates": "node scripts/clean-custom-bundled-duplicates.mjs"
+    "clean:custom-duplicates": "node scripts/clean-custom-bundled-duplicates.mjs",
+    "dict:normalize": "node scripts/normalize-bundled-dicts.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

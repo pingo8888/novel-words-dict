@@ -86,13 +86,7 @@ const result = ref<QueryResponse>({
   pageCount: 1,
 });
 
-const renderItems = computed<(NameEntry | null)[]>(() => {
-  const filled: (NameEntry | null)[] = [...result.value.items];
-  while (filled.length < 40) {
-    filled.push(null);
-  }
-  return filled;
-});
+const renderItems = computed<NameEntry[]>(() => [...result.value.items]);
 
 const pageDisplay = computed(() => `${result.value.page}/${result.value.pageCount}`);
 const isGenderFilterEditable = computed(
@@ -414,7 +408,7 @@ watch(
   <main class="home-page">
     <div class="top-row">
       <p class="description-inline">
-        当前词条数{{ result.totalAll }}，当前取词快捷键{{ activeHotkey }}
+        总词条数：〔{{ result.totalAll }}〕，取词快捷键：〔{{ activeHotkey }}〕
       </p>
       <button class="settings-icon-btn" type="button" title="设置" @click="openSettings">
         <Settings :size="16" :stroke-width="2" />
@@ -480,62 +474,58 @@ watch(
 
     <section class="result-panel">
       <div class="result-summary">
-        <span>命中词条：{{ result.total }}</span>
+        <span>命中词条：〔{{ result.total }}〕</span>
       </div>
 
       <div class="entry-grid">
         <button
           v-for="(entry, index) in renderItems"
-          :key="entry ? `${entry.dictId}-${entry.term}-${index}` : `empty-${index}`"
+          :key="`${entry.dictId}-${entry.term}-${index}`"
           class="entry-item"
-          :class="{ placeholder: !entry }"
           type="button"
-          :disabled="!entry"
-          @click="entry && copyTerm(entry.term)"
-          @contextmenu.prevent="entry && openEditor(entry)"
+          @click="copyTerm(entry.term)"
+          @contextmenu.prevent="openEditor(entry)"
         >
-          <template v-if="entry">
-            <span v-if="!entry.editable" class="entry-lock-corner" title="内置词条不可编辑">
-              <Lock class="entry-lucide" :size="12" :stroke-width="2" />
+          <span v-if="!entry.editable" class="entry-lock-corner" title="内置词条不可编辑">
+            <Lock class="entry-lucide" :size="12" :stroke-width="2" />
+          </span>
+          <div class="entry-icons">
+            <span
+              v-for="icon in getNameTypeIcons(entry.nameType)"
+              :key="`name-${entry.term}-${icon}`"
+              class="entry-icon name-type"
+            >
+              {{ icon }}
             </span>
-            <div class="entry-icons">
-              <span
-                v-for="icon in getNameTypeIcons(entry.nameType)"
-                :key="`name-${entry.term}-${icon}`"
-                class="entry-icon name-type"
-              >
-                {{ icon }}
-              </span>
-              <span
-                v-if="shouldShowGenderIcon(entry.nameType)"
-                class="entry-icon"
-                :class="getGenderIconClass(entry.genderType)"
-              >
-                <Mars
-                  v-if="entry.genderType === 'male'"
-                  class="entry-lucide"
-                  :size="12"
-                  :stroke-width="2"
-                />
-                <Venus
-                  v-else-if="entry.genderType === 'female'"
-                  class="entry-lucide"
-                  :size="12"
-                  :stroke-width="2"
-                />
-                <VenusAndMars
-                  v-else
-                  class="entry-lucide"
-                  :size="12"
-                  :stroke-width="2"
-                />
-              </span>
-            </div>
-            <div class="entry-main">
-              <span class="term">{{ entry.term }}</span>
-              <span class="group">{{ formatGroupLabel(entry.group) }}</span>
-            </div>
-          </template>
+            <span
+              v-if="shouldShowGenderIcon(entry.nameType)"
+              class="entry-icon"
+              :class="getGenderIconClass(entry.genderType)"
+            >
+              <Mars
+                v-if="entry.genderType === 'male'"
+                class="entry-lucide"
+                :size="12"
+                :stroke-width="2"
+              />
+              <Venus
+                v-else-if="entry.genderType === 'female'"
+                class="entry-lucide"
+                :size="12"
+                :stroke-width="2"
+              />
+              <VenusAndMars
+                v-else
+                class="entry-lucide"
+                :size="12"
+                :stroke-width="2"
+              />
+            </span>
+          </div>
+          <div class="entry-main">
+            <span class="term">{{ entry.term }}</span>
+            <span class="group">{{ formatGroupLabel(entry.group) }}</span>
+          </div>
         </button>
       </div>
 

@@ -2,8 +2,8 @@
   box-sizing: border-box;
   height: 100vh;
   padding: 20px;
-  background: #f3f5f8;
-  color: #1f2937;
+  background: transparent;
+  color: var(--ink-main);
   display: flex;
   flex-direction: column;
   gap: 14px;

@@ -475,6 +475,7 @@ watch(
     <section class="result-panel">
       <div class="result-summary">
         <span>命中词条：〔{{ result.total }}〕</span>
+        <p v-if="toastMessage" class="system-tip" :class="`tone-${toastTone}`">{{ toastMessage }}</p>
       </div>
 
       <div class="entry-grid">
@@ -543,8 +544,6 @@ watch(
         </button>
       </div>
     </section>
-
-    <p v-if="toastMessage" class="system-tip" :class="`tone-${toastTone}`">{{ toastMessage }}</p>
 
     <div
       v-if="settingsVisible"

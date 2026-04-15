@@ -72,6 +72,24 @@ function compareTermsByPinyin(left, right) {
   return leftTerm.localeCompare(rightTerm, "zh-Hans");
 }
 
+function compareGroupsByPinyin(left, right) {
+  const leftGroup = typeof left.group === "string" ? left.group.trim() : "";
+  const rightGroup = typeof right.group === "string" ? right.group.trim() : "";
+  const byPinyin = pinyinCollator.compare(leftGroup, rightGroup);
+  if (byPinyin !== 0) {
+    return byPinyin;
+  }
+  return leftGroup.localeCompare(rightGroup, "zh-Hans");
+}
+
+function compareByGroupThenTerm(left, right) {
+  const byGroup = compareGroupsByPinyin(left, right);
+  if (byGroup !== 0) {
+    return byGroup;
+  }
+  return compareTermsByPinyin(left, right);
+}
+
 function formatJsonArray(items) {
   if (items.length === 0) {
     return "[]\n";
@@ -92,9 +110,11 @@ function processFile(filePath) {
   for (const item of parsed) {
     if (isEntryItem(item)) {
       const trimmedTerm = item.term.trim();
+      const trimmedGroup = typeof item.group === "string" ? item.group.trim() : "";
       termEntries.push({
         ...item,
         term: trimmedTerm,
+        group: trimmedGroup,
       });
       continue;
     }
@@ -119,7 +139,7 @@ function processFile(filePath) {
     unique.push(entry);
   }
 
-  unique.sort(compareTermsByPinyin);
+  unique.sort(compareByGroupThenTerm);
 
   const nextArray = [...metaItems, ...unique];
   const nextContent = formatJsonArray(nextArray);

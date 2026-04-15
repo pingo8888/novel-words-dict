@@ -470,8 +470,14 @@ impl EntryStore {
     }
 
     fn load_bundled_dictionaries(&self, app: &AppHandle) -> Vec<DictionaryData> {
-        let mut result: Vec<(i32, usize, DictionaryData)> = Vec::new();
-        let mut used_ids = HashSet::new();
+        struct BundledBucket {
+            order: i32,
+            file_index: usize,
+            name: String,
+            entries: Vec<NameEntry>,
+        }
+
+        let mut grouped: HashMap<String, BundledBucket> = HashMap::new();
         let Some(dict_dir) = resolve_bundled_dict_dir(app) else {
             return Vec::new();
         };
@@ -514,10 +520,6 @@ impl EntryStore {
             if id.is_empty() || id == CUSTOM_DICT_ID {
                 id = format!("bundled-{}", sanitize_dict_id(&fallback_id));
             }
-            while used_ids.contains(&id) {
-                id.push('1');
-            }
-            used_ids.insert(id.clone());
 
             let name = loaded
                 .meta
@@ -525,12 +527,49 @@ impl EntryStore {
                 .map(|meta| meta.dict_name.trim().to_string())
                 .filter(|value| !value.is_empty())
                 .unwrap_or_else(|| fallback_id.clone());
-            result.push((
-                declared_order,
-                file_index,
-                DictionaryData::new(id, name, false, loaded.entries),
-            ));
+
+            let entries = loaded.entries;
+            if let Some(existing) = grouped.get_mut(&id) {
+                let same_meta = existing.order == declared_order && existing.name == name;
+                if same_meta {
+                    existing.entries.extend(entries);
+                    continue;
+                }
+            }
+
+            let mut resolved_id = id.clone();
+            if grouped.contains_key(&resolved_id) {
+                while grouped.contains_key(&resolved_id) {
+                    resolved_id.push('1');
+                }
+                eprintln!(
+                    "内置词库 dictId 冲突且元信息不一致，已重命名 {} -> {}（文件：{}）",
+                    id,
+                    resolved_id,
+                    file.display()
+                );
+            }
+
+            grouped.insert(
+                resolved_id,
+                BundledBucket {
+                    order: declared_order,
+                    file_index,
+                    name,
+                    entries,
+                },
+            );
         }
+        let mut result: Vec<(i32, usize, DictionaryData)> = grouped
+            .into_iter()
+            .map(|(id, bucket)| {
+                (
+                    bucket.order,
+                    bucket.file_index,
+                    DictionaryData::new(id, bucket.name, false, bucket.entries),
+                )
+            })
+            .collect();
         result.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
         result.into_iter().map(|(_, _, dict)| dict).collect()
     }
@@ -956,8 +995,8 @@ fn take_editor_seed(editor_seed: State<EditorSeed>) -> Option<String> {
 fn close_editor_window(app: AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("editor") {
         window
-            .close()
-            .map_err(|err| format!("关闭编辑窗口失败: {err}"))?;
+            .hide()
+            .map_err(|err| format!("隐藏编辑窗口失败: {err}"))?;
     }
     Ok(())
 }
@@ -1435,12 +1474,12 @@ fn start_hotkey_listener(_app: AppHandle) {}
 pub fn run() {
     tauri::Builder::default()
         .on_window_event(|window, event| {
-            if window.label() != "main" {
-                return;
-            }
+            let label = window.label();
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                let _ = window.hide();
+                if label == "main" || label == "editor" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
             }
         })
         .manage(AppState::default())

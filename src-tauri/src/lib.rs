@@ -402,16 +402,27 @@ impl EntryStore {
     }
 
     fn total_entries_merged_all(&self) -> usize {
-        let mut seen = HashSet::new();
+        // Keep custom entries as-is, and only skip bundled entries that
+        // conflict with custom terms. Duplicates inside bundled dicts are kept.
+        let mut custom_seen = HashSet::new();
+        let mut total = 0_usize;
+
         for entry in &self.custom.entries {
-            seen.insert(make_term_key(&entry.term));
+            total += 1;
+            custom_seen.insert(make_term_key(&entry.term));
         }
+
         for dict in &self.bundled {
             for entry in &dict.entries {
-                seen.insert(make_term_key(&entry.term));
+                let key = make_term_key(&entry.term);
+                if custom_seen.contains(&key) {
+                    continue;
+                }
+                total += 1;
             }
         }
-        seen.len()
+
+        total
     }
 
     fn select_dictionary(&self, dict_id: &str) -> &DictionaryData {
@@ -434,19 +445,20 @@ impl EntryStore {
 
     fn collect_query_items_all(&self) -> Vec<QueryItem> {
         let mut out = Vec::new();
-        let mut seen = HashSet::new();
+        let mut custom_seen = HashSet::new();
 
         for item in self.collect_query_items_from_dict(&self.custom) {
-            seen.insert(make_term_key(&item.term));
+            custom_seen.insert(make_term_key(&item.term));
             out.push(item);
         }
         for dict in &self.bundled {
             for item in self.collect_query_items_from_dict(dict) {
                 let key = make_term_key(&item.term);
-                if seen.contains(&key) {
+                // Custom entries still override bundled ones.
+                // Duplicates among bundled dicts are intentionally preserved.
+                if custom_seen.contains(&key) {
                     continue;
                 }
-                seen.insert(key);
                 out.push(item);
             }
         }

@@ -7,7 +7,7 @@ function showBootstrapError(message: string): void {
   if (!root) {
     return;
   }
-  root.innerHTML = `<div style="padding:12px;color:#b91c1c;font-family:'Microsoft YaHei UI',sans-serif;font-size:14px;white-space:pre-wrap;">${message}</div>`;
+  root.innerHTML = `<div style="padding:12px;color:#b91c1c;font-family:'Microsoft YaHei','微软雅黑','Microsoft YaHei UI',sans-serif;font-size:14px;white-space:pre-wrap;">${message}</div>`;
 }
 
 window.addEventListener("error", (event) => {

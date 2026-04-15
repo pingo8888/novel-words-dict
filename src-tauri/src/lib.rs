@@ -32,6 +32,7 @@ enum NameType {
     Gear,
     Item,
     Skill,
+    Faction,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -1105,6 +1106,7 @@ fn matches_name_type_filter(filter: &str, value: NameType) -> bool {
         "gear" => value == NameType::Gear || value == NameType::Both,
         "item" => value == NameType::Item || value == NameType::Both,
         "skill" => value == NameType::Skill || value == NameType::Both,
+        "faction" => value == NameType::Faction || value == NameType::Both,
         "both" => value == NameType::Both,
         _ => true,
     }

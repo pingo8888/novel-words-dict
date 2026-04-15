@@ -5,7 +5,16 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { Lock, Mars, Settings, Venus, VenusAndMars } from "lucide-vue-next";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
-type NameType = "both" | "surname" | "given" | "place" | "gear" | "item" | "skill" | "faction";
+type NameType =
+  | "both"
+  | "surname"
+  | "given"
+  | "place"
+  | "gear"
+  | "item"
+  | "skill"
+  | "faction"
+  | "nickname";
 type GenderType = "both" | "male" | "female";
 type GenreType = "east" | "west";
 type ToastTone = "info" | "error";
@@ -274,6 +283,9 @@ function getNameTypeIcons(nameType: NameType): string[] {
   if (nameType === "faction") {
     return ["势"];
   }
+  if (nameType === "nickname") {
+    return ["绰"];
+  }
   return ["姓", "名"];
 }
 
@@ -448,6 +460,7 @@ watch(
           <option value="item">物品</option>
           <option value="skill">技能</option>
           <option value="faction">势力</option>
+          <option value="nickname">绰号</option>
         </select>
       </label>
 

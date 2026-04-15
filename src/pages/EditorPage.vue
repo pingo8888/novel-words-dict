@@ -284,7 +284,7 @@ watch(
     <div class="actions">
       <div class="actions-left">
         <p v-if="!editingTerm && bundledExistsDictName" class="bundled-exists-tip">
-          [{{ bundledExistsDictName }}]已有此词条
+          “{{ bundledExistsDictName }}”已有此词条
         </p>
         <button
           v-if="editingTerm"

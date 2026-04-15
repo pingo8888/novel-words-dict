@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "clean:custom-duplicates": "node scripts/clean-custom-bundled-duplicates.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

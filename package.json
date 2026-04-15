@@ -1,7 +1,7 @@
 {
   "name": "name-dict",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "clean:custom-duplicates": "node scripts/clean-custom-bundled-duplicates.mjs",
-    "dict:normalize": "node scripts/normalize-bundled-dicts.mjs"
+    "dict:normalize": "node scripts/normalize-bundled-dicts.mjs",
+    "version:bump": "node scripts/bump-version.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

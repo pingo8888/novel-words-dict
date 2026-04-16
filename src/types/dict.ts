@@ -18,3 +18,17 @@ export type ToastTone = "info" | "error";
 export type NameTypeFilter = "all" | NameType;
 export type GenderTypeFilter = "all" | GenderType;
 export type GenreTypeFilter = "all" | GenreType;
+
+export interface NameEntry {
+  term: string;
+  group: string;
+  nameType: NameType;
+  genderType: GenderType;
+  genre: GenreType;
+}
+
+export interface QueryNameEntry extends NameEntry {
+  dictId: string;
+  dictName: string;
+  editable: boolean;
+}

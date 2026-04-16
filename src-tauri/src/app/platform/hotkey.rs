@@ -8,9 +8,9 @@ use tauri::Manager;
 #[cfg(target_os = "windows")]
 use crate::app::commands::set_editor_seed_value;
 #[cfg(target_os = "windows")]
-use crate::app::state::HotkeyState;
+use crate::app::state::{HotkeyShutdown, HotkeyState};
 #[cfg(target_os = "windows")]
-use crate::infra::settings::{hotkey_virtual_key, normalize_hotkey};
+use crate::infra::settings::hotkey_virtual_key;
 #[cfg(target_os = "windows")]
 use crate::DEFAULT_HOTKEY;
 
@@ -38,8 +38,8 @@ fn capture_selected_text_from_system() -> Option<String> {
     use windows_sys::Win32::System::DataExchange::GetClipboardSequenceNumber;
 
     let mut clipboard = Clipboard::new().ok()?;
-    // Only proceed when clipboard text can be restored later.
-    let backup_text = clipboard.get_text().ok()?;
+    // Prefer capture success even when clipboard is not plain text.
+    let backup_text = clipboard.get_text().ok();
     let marker = format!(
         "__name_dict_marker_{}__",
         SystemTime::now()
@@ -81,9 +81,19 @@ fn capture_selected_text_from_system() -> Option<String> {
         }
     }
 
-    let _ = clipboard.set_text(backup_text);
-
     let cleaned = captured.trim().to_string();
+    if let Some(text) = backup_text {
+        let _ = clipboard.set_text(text);
+    } else if cleaned.is_empty() {
+        let should_clear_marker = clipboard
+            .get_text()
+            .map(|text| text == marker)
+            .unwrap_or(false);
+        if should_clear_marker {
+            let _ = clipboard.set_text(String::new());
+        }
+    }
+
     if cleaned.is_empty() {
         None
     } else {
@@ -96,50 +106,70 @@ pub(crate) fn start_hotkey_listener<R: tauri::Runtime>(app: AppHandle<R>)
 where
     AppHandle<R>: Send + 'static,
 {
-    std::thread::spawn(move || unsafe {
+    let shutdown = app.state::<HotkeyShutdown>().0.clone();
+    std::thread::spawn(move || {
+        use std::sync::atomic::Ordering;
         use std::thread;
         use std::time::Duration;
         use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
             RegisterHotKey, UnregisterHotKey, MOD_ALT,
         };
         use windows_sys::Win32::UI::WindowsAndMessaging::{
-            PeekMessageW, MSG, PM_REMOVE, WM_HOTKEY,
+            PeekMessageW, MSG, PM_NOREMOVE, PM_REMOVE, WM_HOTKEY,
         };
 
         const HOTKEY_ID: i32 = 1104;
         let mut current_hotkey = String::new();
         let mut is_registered = false;
-        let mut msg: MSG = std::mem::zeroed();
+        let mut refresh_counter: u8 = 0;
+        let mut msg: MSG = unsafe { std::mem::zeroed() };
+
+        // Ensure current thread has a message queue before registering hotkey.
+        let _ = unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_NOREMOVE) };
+
         loop {
-            let desired_hotkey = app
-                .state::<HotkeyState>()
-                .0
-                .lock()
-                .map(|value| normalize_hotkey(value.as_str()))
-                .unwrap_or_else(|_| DEFAULT_HOTKEY.to_string());
-
-            if desired_hotkey != current_hotkey {
-                if is_registered {
-                    let _ = UnregisterHotKey(std::ptr::null_mut(), HOTKEY_ID);
-                    is_registered = false;
-                }
-
-                let vk = hotkey_virtual_key(&desired_hotkey);
-                if RegisterHotKey(std::ptr::null_mut(), HOTKEY_ID, MOD_ALT, vk) == 0 {
-                    eprintln!(
-                        "注册全局快捷键 {} 失败，可能已被其他程序占用",
-                        desired_hotkey
-                    );
-                } else {
-                    is_registered = true;
-                }
-                current_hotkey = desired_hotkey;
+            if shutdown.load(Ordering::Relaxed) {
+                break;
             }
 
-            while PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) != 0 {
+            if refresh_counter == 0 {
+                let desired_hotkey = app
+                    .state::<HotkeyState>()
+                    .0
+                    .lock()
+                    .map(|value| value.clone())
+                    .unwrap_or_else(|_| {
+                        eprintln!("读取快捷键状态失败：状态锁已中毒（poisoned）");
+                        DEFAULT_HOTKEY.to_string()
+                    });
+
+                if desired_hotkey != current_hotkey {
+                    if is_registered {
+                        let _ = unsafe { UnregisterHotKey(std::ptr::null_mut(), HOTKEY_ID) };
+                        is_registered = false;
+                    }
+
+                    let vk = hotkey_virtual_key(&desired_hotkey);
+                    if unsafe { RegisterHotKey(std::ptr::null_mut(), HOTKEY_ID, MOD_ALT, vk) } == 0
+                    {
+                        eprintln!(
+                            "注册全局快捷键 {} 失败，可能已被其他程序占用",
+                            desired_hotkey
+                        );
+                    } else {
+                        is_registered = true;
+                    }
+                    current_hotkey = desired_hotkey;
+                }
+                refresh_counter = 10;
+            } else {
+                refresh_counter -= 1;
+            }
+
+            while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
                 if msg.message == WM_HOTKEY && msg.wParam == HOTKEY_ID as usize {
                     let selected = capture_selected_text_from_system().unwrap_or_default();
-                    if let Err(err) = set_editor_seed_value(&app, selected.clone()) {
+                    if let Err(err) = set_editor_seed_value(&app, &selected) {
                         eprintln!("{err}");
                         continue;
                     }
@@ -150,6 +180,10 @@ where
             }
 
             thread::sleep(Duration::from_millis(20));
+        }
+
+        if is_registered {
+            let _ = unsafe { UnregisterHotKey(std::ptr::null_mut(), HOTKEY_ID) };
         }
     });
 }

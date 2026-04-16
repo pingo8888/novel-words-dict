@@ -1,9 +1,16 @@
 .editor-page {
   box-sizing: border-box;
   height: 100vh;
+  position: relative;
   padding: 20px;
   background: transparent;
   color: var(--ink-main);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.editor-content {
   display: flex;
   flex-direction: column;
   gap: 14px;

@@ -1,5 +1,10 @@
 use pinyin::ToPinyin;
-use std::cmp::Ordering;
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct TermSortKey {
+    pub(crate) bucket: u8,
+    pub(crate) initial: Option<char>,
+    pub(crate) pinyin: String,
+}
 
 fn leading_alpha_initial(term: &str) -> Option<char> {
     for ch in term.trim().chars() {
@@ -36,15 +41,12 @@ fn pinyin_sort_key(value: &str) -> String {
     out
 }
 
-pub(crate) fn compare_terms(left: &str, right: &str) -> Ordering {
-    let left_initial = leading_alpha_initial(left);
-    let right_initial = leading_alpha_initial(right);
-    let left_bucket = if left_initial.is_some() { 0_u8 } else { 1_u8 };
-    let right_bucket = if right_initial.is_some() { 0_u8 } else { 1_u8 };
-
-    left_bucket
-        .cmp(&right_bucket)
-        .then_with(|| left_initial.cmp(&right_initial))
-        .then_with(|| pinyin_sort_key(left).cmp(&pinyin_sort_key(right)))
-        .then_with(|| left.cmp(right))
+pub(crate) fn build_term_sort_key(term: &str) -> TermSortKey {
+    let initial = leading_alpha_initial(term);
+    let bucket = if initial.is_some() { 0_u8 } else { 1_u8 };
+    TermSortKey {
+        bucket,
+        initial,
+        pinyin: pinyin_sort_key(term),
+    }
 }

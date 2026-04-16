@@ -54,6 +54,12 @@
   color: #0b1220;
 }
 
+.settings-desc {
+  margin: -4px 0 2px;
+  color: #475569;
+  font-size: 12px;
+}
+
 .settings-dialog .field small {
   margin-top: 2px;
   color: #64748b;

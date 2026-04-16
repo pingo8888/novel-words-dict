@@ -7,7 +7,15 @@ function showBootstrapError(message: string): void {
   if (!root) {
     return;
   }
-  root.innerHTML = `<div style="padding:12px;color:#b91c1c;font-family:'Microsoft YaHei','微软雅黑','Microsoft YaHei UI',sans-serif;font-size:14px;white-space:pre-wrap;">${message}</div>`;
+  root.replaceChildren();
+  const container = document.createElement("div");
+  container.style.padding = "12px";
+  container.style.color = "#b91c1c";
+  container.style.fontFamily = "'Microsoft YaHei','微软雅黑','Microsoft YaHei UI',sans-serif";
+  container.style.fontSize = "14px";
+  container.style.whiteSpace = "pre-wrap";
+  container.textContent = message;
+  root.appendChild(container);
 }
 
 window.addEventListener("error", (event) => {

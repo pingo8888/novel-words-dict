@@ -13,33 +13,33 @@ pub(crate) struct OpenEditorRequest {
 
 pub(crate) fn set_editor_seed_value<R: tauri::Runtime>(
     app: &AppHandle<R>,
-    term: String,
+    term: &str,
 ) -> Result<(), String> {
     let seed_state = app.state::<EditorSeed>();
     let mut guard = seed_state
         .0
         .lock()
-        .map_err(|_| "写入编辑词条失败：状态锁不可用".to_string())?;
-    *guard = Some(term);
+        .map_err(|_| "写入编辑词条失败：状态锁已中毒（poisoned）".to_string())?;
+    *guard = Some(term.to_string());
     Ok(())
 }
 
 #[tauri::command]
 pub(crate) fn open_editor_window(app: AppHandle, request: OpenEditorRequest) -> Result<(), String> {
     let term = request.term.unwrap_or_default();
-    set_editor_seed_value(&app, term.clone())?;
+    set_editor_seed_value(&app, &term)?;
     app.emit_to("main", "editor-open-request", term)
         .map_err(|err| format!("发送编辑窗口事件失败: {err}"))?;
     Ok(())
 }
 
 #[tauri::command]
-pub(crate) fn take_editor_seed(editor_seed: State<EditorSeed>) -> Option<String> {
-    if let Ok(mut guard) = editor_seed.0.lock() {
-        guard.take()
-    } else {
-        None
-    }
+pub(crate) fn take_editor_seed(editor_seed: State<EditorSeed>) -> Result<Option<String>, String> {
+    let mut guard = editor_seed
+        .0
+        .lock()
+        .map_err(|_| "读取编辑词条失败：状态锁已中毒（poisoned）".to_string())?;
+    Ok(guard.take())
 }
 
 #[tauri::command]
@@ -54,5 +54,5 @@ pub(crate) fn close_editor_window(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub(crate) fn set_editor_seed(app: AppHandle, term: String) -> Result<(), String> {
-    set_editor_seed_value(&app, term)
+    set_editor_seed_value(&app, &term)
 }

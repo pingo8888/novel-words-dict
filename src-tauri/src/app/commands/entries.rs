@@ -13,7 +13,7 @@ pub(crate) fn query_entries(
     let store = state
         .store
         .lock()
-        .map_err(|_| "读取数据失败：状态锁不可用".to_string())?;
+        .map_err(|_| "读取数据失败：状态锁已中毒（poisoned）".to_string())?;
     Ok(store.query(&request))
 }
 
@@ -22,7 +22,7 @@ pub(crate) fn list_dictionaries(state: State<AppState>) -> Result<Vec<Dictionary
     let store = state
         .store
         .lock()
-        .map_err(|_| "读取词库失败：状态锁不可用".to_string())?;
+        .map_err(|_| "读取词库失败：状态锁已中毒（poisoned）".to_string())?;
     Ok(store.list_dictionaries())
 }
 
@@ -31,7 +31,7 @@ pub(crate) fn get_entry(state: State<AppState>, term: String) -> Result<Option<N
     let store = state
         .store
         .lock()
-        .map_err(|_| "读取词条失败：状态锁不可用".to_string())?;
+        .map_err(|_| "读取词条失败：状态锁已中毒（poisoned）".to_string())?;
     Ok(store.get_entry(&term))
 }
 
@@ -43,7 +43,7 @@ pub(crate) fn get_bundled_entry_dict_name(
     let store = state
         .store
         .lock()
-        .map_err(|_| "读取词条失败：状态锁不可用".to_string())?;
+        .map_err(|_| "读取词条失败：状态锁已中毒（poisoned）".to_string())?;
     Ok(store.get_bundled_entry_dict_name(&term))
 }
 
@@ -58,7 +58,7 @@ pub(crate) fn upsert_entry(
         let mut store = state
             .store
             .lock()
-            .map_err(|_| "保存词条失败：状态锁不可用".to_string())?;
+            .map_err(|_| "保存词条失败：状态锁已中毒（poisoned）".to_string())?;
         store.upsert(entry)?;
     }
 
@@ -81,7 +81,7 @@ pub(crate) fn delete_entry(
         let mut store = state
             .store
             .lock()
-            .map_err(|_| "删除词条失败：状态锁不可用".to_string())?;
+            .map_err(|_| "删除词条失败：状态锁已中毒（poisoned）".to_string())?;
         store.delete(&trimmed_term)?;
     }
 

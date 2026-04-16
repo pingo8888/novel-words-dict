@@ -1,4 +1,3 @@
-use super::text::normalize_text;
 use super::types::{GenderType, GenreType, NameType};
 
 pub(crate) fn matches_genre_filter(filter: &str, value: GenreType) -> bool {
@@ -36,11 +35,4 @@ pub(crate) fn matches_gender_type_filter(filter: &str, value: GenderType) -> boo
         "both" => value == GenderType::Both,
         _ => true,
     }
-}
-
-pub(crate) fn matches_query_text(keyword: &str, term: &str, group: &str) -> bool {
-    if keyword.is_empty() {
-        return true;
-    }
-    normalize_text(term).contains(keyword) || normalize_text(group).contains(keyword)
 }

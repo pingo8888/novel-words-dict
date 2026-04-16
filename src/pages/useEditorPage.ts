@@ -2,17 +2,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useToast } from "../composables/useToast";
-import type { GenderType, GenreType, NameType } from "../types/dict";
+import type { NameEntry } from "../types/dict";
 import { resolveErrorMessage } from "../utils/error";
 import { isGenderEditableByNameType } from "../utils/nameType";
-
-interface NameEntry {
-  term: string;
-  genre: GenreType;
-  group: string;
-  nameType: NameType;
-  genderType: GenderType;
-}
 
 export function useEditorPage() {
   const saving = ref(false);
@@ -32,6 +24,23 @@ export function useEditorPage() {
   const isGenderTypeEditable = computed(() => isGenderEditableByNameType(form.nameType));
   let unlistenSeedUpdated: (() => void) | null = null;
   let bundledHintSeq = 0;
+  let bundledHintTimer: ReturnType<typeof setTimeout> | null = null;
+
+  type TakeEditorSeedResult =
+    | { ok: true; seed: string | null }
+    | { ok: false; error: string };
+
+  async function takeEditorSeed(): Promise<TakeEditorSeedResult> {
+    try {
+      const seed = await invoke<string | null>("take_editor_seed");
+      return { ok: true, seed };
+    } catch (error) {
+      return {
+        ok: false,
+        error: resolveErrorMessage(error, "读取编辑词条失败"),
+      };
+    }
+  }
 
   function resetFormWithTerm(term: string): void {
     form.term = term.trim();
@@ -90,6 +99,15 @@ export function useEditorPage() {
       resetFormWithTerm(normalizedTerm);
       await refreshBundledExistsHint(normalizedTerm);
     }
+  }
+
+  async function refreshEditorFromSeed(): Promise<void> {
+    const nextSeedResult = await takeEditorSeed();
+    if (!nextSeedResult.ok) {
+      showToast(nextSeedResult.error, "error");
+      return;
+    }
+    await loadEntryByTerm(nextSeedResult.seed ?? "");
   }
 
   async function saveEntry(): Promise<void> {
@@ -157,15 +175,11 @@ export function useEditorPage() {
 
   onMounted(async () => {
     try {
-      const seedTerm = await invoke<string | null>("take_editor_seed");
-      await loadEntryByTerm(seedTerm ?? "");
-      unlistenSeedUpdated = await listen("editor-seed-updated", async () => {
-        try {
-          const nextSeed = await invoke<string | null>("take_editor_seed");
-          await loadEntryByTerm(nextSeed ?? "");
-        } catch (error) {
-          showToast(resolveErrorMessage(error, "刷新词条失败"), "error");
-        }
+      await refreshEditorFromSeed();
+      unlistenSeedUpdated = await listen("editor-seed-updated", () => {
+        void refreshEditorFromSeed().catch((error) => {
+          showToast(resolveErrorMessage(error, "刷新词条失败，请稍后重试"), "error");
+        });
       });
     } catch (error) {
       showToast(resolveErrorMessage(error, "初始化词条失败，请关闭后重试"), "error");
@@ -173,6 +187,10 @@ export function useEditorPage() {
   });
 
   onBeforeUnmount(() => {
+    if (bundledHintTimer) {
+      clearTimeout(bundledHintTimer);
+      bundledHintTimer = null;
+    }
     if (unlistenSeedUpdated) {
       unlistenSeedUpdated();
       unlistenSeedUpdated = null;
@@ -192,7 +210,12 @@ export function useEditorPage() {
   watch(
     () => form.term,
     (value) => {
-      void refreshBundledExistsHint(value);
+      if (bundledHintTimer) {
+        clearTimeout(bundledHintTimer);
+      }
+      bundledHintTimer = setTimeout(() => {
+        void refreshBundledExistsHint(value);
+      }, 220);
     },
   );
 

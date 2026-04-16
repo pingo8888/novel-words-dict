@@ -12,7 +12,7 @@ use crate::app::{
         list_dictionaries, open_editor_window, query_entries, save_app_settings, set_editor_seed,
         take_editor_seed, upsert_entry,
     },
-    state::{AppState, EditorSeed, HotkeyState, SettingsState},
+    state::{AppState, EditorSeed, HotkeyShutdown, HotkeyState, SettingsState},
 };
 
 const DATA_FILE_NAME: &str = "entries.json";
@@ -28,7 +28,7 @@ const PAGE_SIZE: usize = 40;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .on_window_event(|window, event| {
             let label = window.label();
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
@@ -42,6 +42,7 @@ pub fn run() {
         .manage(SettingsState::default())
         .manage(EditorSeed::default())
         .manage(HotkeyState(Mutex::new(DEFAULT_HOTKEY.to_string())))
+        .manage(HotkeyShutdown::default())
         .plugin(tauri_plugin_opener::init())
         .setup(setup_app)
         .invoke_handler(tauri::generate_handler![
@@ -57,7 +58,10 @@ pub fn run() {
             take_editor_seed,
             close_editor_window,
             set_editor_seed
-        ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        ]);
+
+    if let Err(err) = app.run(tauri::generate_context!()) {
+        eprintln!("运行应用失败: {err}");
+        std::process::exit(1);
+    }
 }

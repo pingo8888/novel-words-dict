@@ -1,5 +1,7 @@
 use tauri::Manager;
 
+use crate::app::state::HotkeyShutdown;
+
 fn show_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     if let Some(main_window) = app.get_webview_window("main") {
         let _ = main_window.unminimize();
@@ -21,7 +23,10 @@ pub(crate) fn setup_tray_icon<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tau
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "tray_show" => show_main_window(app),
-            "tray_quit" => app.exit(0),
+            "tray_quit" => {
+                app.state::<HotkeyShutdown>().request_shutdown();
+                app.exit(0);
+            }
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {

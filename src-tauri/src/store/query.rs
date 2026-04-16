@@ -17,6 +17,8 @@ pub(crate) struct QueryRequest {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct QueryItem {
     pub(crate) term: String,
+    #[serde(skip_serializing)]
+    pub(crate) term_key: String,
     pub(crate) group: String,
     pub(crate) name_type: NameType,
     pub(crate) gender_type: GenderType,
@@ -24,6 +26,16 @@ pub(crate) struct QueryItem {
     pub(crate) dict_id: String,
     pub(crate) dict_name: String,
     pub(crate) editable: bool,
+    #[serde(skip_serializing)]
+    pub(crate) term_norm: String,
+    #[serde(skip_serializing)]
+    pub(crate) group_norm: String,
+    #[serde(skip_serializing)]
+    pub(crate) sort_bucket: u8,
+    #[serde(skip_serializing)]
+    pub(crate) sort_initial: Option<char>,
+    #[serde(skip_serializing)]
+    pub(crate) sort_pinyin: String,
 }
 
 #[derive(Debug, Serialize)]

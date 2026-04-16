@@ -8,27 +8,16 @@ import { useToast } from "../composables/useToast";
 import type {
   GenderType,
   GenderTypeFilter,
-  GenreType,
   GenreTypeFilter,
-  NameType,
   NameTypeFilter,
+  NameType,
+  QueryNameEntry,
 } from "../types/dict";
 import { resolveErrorMessage } from "../utils/error";
 import { isGenderEditableByNameType } from "../utils/nameType";
 
-interface NameEntry {
-  term: string;
-  group: string;
-  nameType: NameType;
-  genderType: GenderType;
-  genre: GenreType;
-  dictId: string;
-  dictName: string;
-  editable: boolean;
-}
-
 interface QueryResponse {
-  items: NameEntry[];
+  items: QueryNameEntry[];
   total: number;
   totalAll: number;
   page: number;
@@ -92,7 +81,7 @@ export function useHomePage() {
     pageCount: 1,
   });
 
-  const renderItems = computed<NameEntry[]>(() => [...result.value.items]);
+  const renderItems = computed<QueryNameEntry[]>(() => result.value.items);
   const pageDisplay = computed(() => `${result.value.page}/${result.value.pageCount}`);
   const isGenderFilterEditable = computed(() =>
     filters.nameType === "all" ? false : isGenderEditableByNameType(filters.nameType),
@@ -197,7 +186,7 @@ export function useHomePage() {
     await query(false);
   }
 
-  async function openEditor(entry: NameEntry): Promise<void> {
+  async function openEditor(entry: QueryNameEntry): Promise<void> {
     if (!entry.editable) {
       showToast("内置词库词条不可编辑", "error");
       return;
@@ -240,7 +229,7 @@ export function useHomePage() {
     }
   }
 
-  function buildSearchText(entry: NameEntry): string {
+  function buildSearchText(entry: QueryNameEntry): string {
     const term = entry.term.trim();
     const group = entry.group.trim();
     if (!term) {
@@ -249,7 +238,7 @@ export function useHomePage() {
     return group ? `${group} ${term}` : term;
   }
 
-  async function searchTermInBrowser(entry: NameEntry): Promise<void> {
+  async function searchTermInBrowser(entry: QueryNameEntry): Promise<void> {
     const text = buildSearchText(entry);
     if (!text) {
       return;
@@ -264,7 +253,7 @@ export function useHomePage() {
     }
   }
 
-  async function handleEntryClick(event: MouseEvent, entry: NameEntry): Promise<void> {
+  async function handleEntryClick(event: MouseEvent, entry: QueryNameEntry): Promise<void> {
     if (event.ctrlKey && event.button === 0) {
       event.preventDefault();
       await searchTermInBrowser(entry);
@@ -274,37 +263,35 @@ export function useHomePage() {
   }
 
   function getNameTypeIcons(nameType: NameType): string[] {
-    if (nameType === "surname") {
-      return ["姓"];
+    switch (nameType) {
+      case "surname":
+        return ["姓"];
+      case "given":
+        return ["名"];
+      case "place":
+        return ["地"];
+      case "creature":
+        return ["生"];
+      case "gear":
+        return ["装"];
+      case "item":
+        return ["物"];
+      case "skill":
+        return ["技"];
+      case "faction":
+        return ["势"];
+      case "nickname":
+        return ["绰"];
+      case "others":
+        return [];
+      case "both":
+        return ["姓", "名"];
+      default:
+        if (import.meta.env.DEV) {
+          console.warn("Unknown nameType icon mapping:", nameType);
+        }
+        return [];
     }
-    if (nameType === "given") {
-      return ["名"];
-    }
-    if (nameType === "place") {
-      return ["地"];
-    }
-    if (nameType === "gear") {
-      return ["装"];
-    }
-    if (nameType === "item") {
-      return ["物"];
-    }
-    if (nameType === "skill") {
-      return ["技"];
-    }
-    if (nameType === "faction") {
-      return ["势"];
-    }
-    if (nameType === "nickname") {
-      return ["绰"];
-    }
-    if (nameType === "creature") {
-      return ["生"];
-    }
-    if (nameType === "others") {
-      return [];
-    }
-    return ["姓", "名"];
   }
 
   function getGenderIconClass(genderType: GenderType): string {

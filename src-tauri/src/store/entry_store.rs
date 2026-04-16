@@ -1,32 +1,46 @@
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use tauri::AppHandle;
 
-use crate::core::filter::{
-    matches_gender_type_filter, matches_genre_filter, matches_name_type_filter, matches_query_text,
-};
-use crate::core::sort::compare_terms;
+use crate::core::filter::{matches_gender_type_filter, matches_genre_filter, matches_name_type_filter};
 use crate::core::text::make_term_key;
 use crate::core::types::{DictionaryMeta, DictionaryOption, NameEntry};
 use crate::infra::files::{
     collect_json_files, is_custom_entries_file, load_entries_from_json_file, load_entries_from_ndjson_file,
-    sanitize_dict_id,
+    replace_file_from_temp, sanitize_dict_id,
 };
-use crate::infra::paths::resolve_bundled_dict_dir;
+use crate::infra::paths::resolve_bundled_dict_dir_candidates;
 use crate::{
     ALL_DICT_ID, ALL_DICT_NAME, CUSTOM_DICT_ID, CUSTOM_DICT_NAME, LEGACY_DATA_FILE_NAME, PAGE_SIZE,
 };
 
 use super::dictionary::DictionaryData;
-use super::query::{QueryItem, QueryRequest, QueryResponse};
+use super::query::{QueryRequest, QueryResponse};
+
+fn compare_query_items(a: &super::query::QueryItem, b: &super::query::QueryItem) -> std::cmp::Ordering {
+    a.sort_bucket
+        .cmp(&b.sort_bucket)
+        .then_with(|| a.sort_initial.cmp(&b.sort_initial))
+        .then_with(|| a.sort_pinyin.cmp(&b.sort_pinyin))
+        .then_with(|| a.term.cmp(&b.term))
+}
+
+fn compare_query_item_refs(
+    a: &&super::query::QueryItem,
+    b: &&super::query::QueryItem,
+) -> std::cmp::Ordering {
+    compare_query_items(a, b)
+}
 
 #[derive(Default)]
 pub(crate) struct EntryStore {
     pub(crate) custom: DictionaryData,
     pub(crate) bundled: Vec<DictionaryData>,
     pub(crate) custom_data_path: Option<PathBuf>,
+    pub(crate) total_all_cache: usize,
+    pub(crate) custom_term_keys: HashSet<String>,
 }
 
 impl EntryStore {
@@ -61,6 +75,8 @@ impl EntryStore {
                         if entry.term.is_empty() {
                             continue;
                         }
+                        // Later file overrides same term from earlier file.
+                        // File order is deterministic by sorted path, then custom entries file last.
                         latest.insert(make_term_key(&entry.term), entry);
                     }
                 }
@@ -83,6 +99,7 @@ impl EntryStore {
                             if entry.term.is_empty() {
                                 continue;
                             }
+                            // Legacy file is loaded only when no JSON file was parsed.
                             latest.insert(make_term_key(&entry.term), entry);
                         }
                     }
@@ -101,6 +118,8 @@ impl EntryStore {
         );
         self.bundled = self.load_bundled_dictionaries(app);
         self.custom_data_path = Some(path.clone());
+        self.refresh_custom_term_keys();
+        self.total_all_cache = self.compute_total_entries_merged_all();
 
         if !path.exists() {
             self.persist()?;
@@ -143,16 +162,44 @@ impl EntryStore {
             .trim()
             .to_lowercase();
 
-        let mut matched = self
-            .collect_query_items(dict_filter.as_str())
-            .into_iter()
-            .filter(|entry| matches_genre_filter(&genre_type, entry.genre))
-            .filter(|entry| matches_name_type_filter(&name_type, entry.name_type))
-            .filter(|entry| matches_gender_type_filter(&gender_type, entry.gender_type))
-            .filter(|entry| matches_query_text(&keyword, &entry.term, &entry.group))
-            .collect::<Vec<_>>();
+        let matches_item = |entry: &super::query::QueryItem| {
+            matches_genre_filter(&genre_type, entry.genre)
+                && matches_name_type_filter(&name_type, entry.name_type)
+                && matches_gender_type_filter(&gender_type, entry.gender_type)
+                && (keyword.is_empty()
+                    || entry.term_norm.contains(&keyword)
+                    || entry.group_norm.contains(&keyword))
+        };
 
-        matched.sort_by(|a, b| compare_terms(&a.term, &b.term));
+        let mut matched: Vec<&super::query::QueryItem> = Vec::new();
+        if dict_filter.eq_ignore_ascii_case(ALL_DICT_ID) {
+            matched.reserve(self.total_all_cache);
+            for entry in &self.custom.query_items {
+                if matches_item(entry) {
+                    matched.push(entry);
+                }
+            }
+            for dict in &self.bundled {
+                for entry in &dict.query_items {
+                    // Custom entries still override bundled ones.
+                    // Duplicates among bundled dicts are intentionally preserved.
+                    if self.custom_term_keys.contains(&entry.term_key) {
+                        continue;
+                    }
+                    if matches_item(entry) {
+                        matched.push(entry);
+                    }
+                }
+            }
+        } else {
+            let selected_dict = self.select_dictionary(dict_filter.as_str());
+            matched.reserve(selected_dict.query_items.len());
+            for entry in &selected_dict.query_items {
+                if matches_item(entry) {
+                    matched.push(entry);
+                }
+            }
+        }
 
         let total = matched.len();
         let page_count = if total == 0 {
@@ -162,12 +209,38 @@ impl EntryStore {
         };
         let page = request.page.unwrap_or(1).max(1).min(page_count);
         let start = (page - 1) * PAGE_SIZE;
-        let items = matched.into_iter().skip(start).take(PAGE_SIZE).collect();
+        let end = (start + PAGE_SIZE).min(total);
+
+        let items = if total == 0 {
+            Vec::new()
+        } else if start == 0 && end == total {
+            matched.sort_by(compare_query_item_refs);
+            matched.into_iter().cloned().collect()
+        } else if start == 0 {
+            let (page_slice, _, _) = matched.select_nth_unstable_by(end, compare_query_item_refs);
+            page_slice.sort_by(compare_query_item_refs);
+            page_slice.iter().map(|entry| (*entry).clone()).collect()
+        } else {
+            let (_, pivot, tail) = matched.select_nth_unstable_by(start, compare_query_item_refs);
+            let mut candidates: Vec<&super::query::QueryItem> = Vec::with_capacity(total - start);
+            candidates.push(*pivot);
+            candidates.extend(tail.iter().copied());
+            if end < total {
+                let page_len = end - start;
+                let (page_slice, _, _) =
+                    candidates.select_nth_unstable_by(page_len, compare_query_item_refs);
+                page_slice.sort_by(compare_query_item_refs);
+                page_slice.iter().map(|entry| (*entry).clone()).collect()
+            } else {
+                candidates.sort_by(compare_query_item_refs);
+                candidates.into_iter().cloned().collect()
+            }
+        };
 
         QueryResponse {
             items,
             total,
-            total_all: self.total_entries_merged_all(),
+            total_all: self.total_all_cache,
             page,
             page_count,
         }
@@ -207,8 +280,9 @@ impl EntryStore {
             self.custom.entries.push(entry);
         }
 
-        self.sort_custom_entries();
-        self.rebuild_custom_index();
+        self.custom.rebuild_derived();
+        self.refresh_custom_term_keys();
+        self.total_all_cache = self.compute_total_entries_merged_all();
         self.persist()
     }
 
@@ -219,8 +293,9 @@ impl EntryStore {
         };
 
         self.custom.entries.remove(existing_idx);
-        self.sort_custom_entries();
-        self.rebuild_custom_index();
+        self.custom.rebuild_derived();
+        self.refresh_custom_term_keys();
+        self.total_all_cache = self.compute_total_entries_merged_all();
         self.persist()
     }
 
@@ -250,25 +325,8 @@ impl EntryStore {
 
         let temp_path = path.with_extension("json.tmp");
         fs::write(&temp_path, out).map_err(|err| format!("写入临时文件失败: {err}"))?;
-
-        if path.exists() {
-            fs::remove_file(path).map_err(|err| format!("替换旧数据文件失败: {err}"))?;
-        }
-        fs::rename(&temp_path, path).map_err(|err| format!("落盘数据文件失败: {err}"))?;
+        replace_file_from_temp(&temp_path, path)?;
         Ok(())
-    }
-
-    fn sort_custom_entries(&mut self) {
-        self.custom
-            .entries
-            .sort_by(|a, b| compare_terms(&a.term, &b.term));
-    }
-
-    fn rebuild_custom_index(&mut self) {
-        self.custom.index.clear();
-        for (idx, entry) in self.custom.entries.iter().enumerate() {
-            self.custom.index.insert(make_term_key(&entry.term), idx);
-        }
     }
 
     pub(crate) fn list_dictionaries(&self) -> Vec<DictionaryOption> {
@@ -293,21 +351,14 @@ impl EntryStore {
         items
     }
 
-    fn total_entries_merged_all(&self) -> usize {
+    fn compute_total_entries_merged_all(&self) -> usize {
         // Keep custom entries as-is, and only skip bundled entries that
         // conflict with custom terms. Duplicates inside bundled dicts are kept.
-        let mut custom_seen = HashSet::new();
-        let mut total = 0_usize;
-
-        for entry in &self.custom.entries {
-            total += 1;
-            custom_seen.insert(make_term_key(&entry.term));
-        }
+        let mut total = self.custom.entries.len();
 
         for dict in &self.bundled {
-            for entry in &dict.entries {
-                let key = make_term_key(&entry.term);
-                if custom_seen.contains(&key) {
+            for entry in &dict.query_items {
+                if self.custom_term_keys.contains(&entry.term_key) {
                     continue;
                 }
                 total += 1;
@@ -327,56 +378,26 @@ impl EntryStore {
             .unwrap_or(&self.custom)
     }
 
-    fn collect_query_items(&self, dict_filter: &str) -> Vec<QueryItem> {
-        if dict_filter.eq_ignore_ascii_case(ALL_DICT_ID) {
-            return self.collect_query_items_all();
-        }
-        let selected_dict = self.select_dictionary(dict_filter);
-        self.collect_query_items_from_dict(selected_dict)
-    }
-
-    fn collect_query_items_all(&self) -> Vec<QueryItem> {
-        let mut out = Vec::new();
-        let mut custom_seen = HashSet::new();
-
-        for item in self.collect_query_items_from_dict(&self.custom) {
-            custom_seen.insert(make_term_key(&item.term));
-            out.push(item);
-        }
-        for dict in &self.bundled {
-            for item in self.collect_query_items_from_dict(dict) {
-                let key = make_term_key(&item.term);
-                // Custom entries still override bundled ones.
-                // Duplicates among bundled dicts are intentionally preserved.
-                if custom_seen.contains(&key) {
-                    continue;
-                }
-                out.push(item);
-            }
-        }
-        out
-    }
-
-    fn collect_query_items_from_dict(&self, dict: &DictionaryData) -> Vec<QueryItem> {
-        dict.entries
-            .iter()
-            .map(|entry| QueryItem {
-                term: entry.term.clone(),
-                group: entry.group.clone(),
-                name_type: entry.name_type,
-                gender_type: entry.gender_type,
-                genre: entry.genre,
-                dict_id: dict.id.clone(),
-                dict_name: dict.name.clone(),
-                editable: dict.editable,
-            })
-            .collect()
+    fn refresh_custom_term_keys(&mut self) {
+        self.custom_term_keys.clear();
+        self.custom_term_keys.extend(self.custom.index.keys().cloned());
     }
 
     fn load_bundled_dictionaries<R: tauri::Runtime>(
         &self,
         app: &AppHandle<R>,
     ) -> Vec<DictionaryData> {
+        for dict_dir in resolve_bundled_dict_dir_candidates(app) {
+            let loaded = self.load_bundled_dictionaries_from_dir(&dict_dir);
+            if loaded.is_empty() {
+                continue;
+            }
+            return loaded;
+        }
+        Vec::new()
+    }
+
+    fn load_bundled_dictionaries_from_dir(&self, dict_dir: &Path) -> Vec<DictionaryData> {
         struct BundledBucket {
             order: i32,
             file_index: usize,
@@ -385,10 +406,7 @@ impl EntryStore {
         }
 
         let mut grouped: HashMap<String, BundledBucket> = HashMap::new();
-        let Some(dict_dir) = resolve_bundled_dict_dir(app) else {
-            return Vec::new();
-        };
-        let mut files = match collect_json_files(&dict_dir) {
+        let mut files = match collect_json_files(dict_dir) {
             Ok(value) => value,
             Err(err) => {
                 eprintln!("读取内置词库目录失败 {}: {err}", dict_dir.display());

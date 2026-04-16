@@ -145,6 +145,31 @@ h1 {
   gap: 8px;
 }
 
+.confirm-actions button {
+  min-width: 92px;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirm-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.confirm-actions .secondary {
+  color: #1f2937;
+  background: #e5e7eb;
+}
+
+.confirm-actions .danger {
+  color: #ffffff;
+  background: #dc2626;
+}
+
 .system-tip {
   position: absolute;
   top: 10px;

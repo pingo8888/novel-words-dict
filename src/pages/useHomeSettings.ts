@@ -14,13 +14,13 @@ interface UseHomeSettingsOptions {
 }
 
 export function useHomeSettings(options: UseHomeSettingsOptions) {
-  const activeHotkey = ref("Alt+Z");
+  const activeHotkey = ref("Alt+D");
   const settingsVisible = ref(false);
   const settingsSaving = ref(false);
   const projectDataDir = ref("");
   const settingsForm = reactive({
     dictDir: "",
-    hotkey: "Alt+Z",
+    hotkey: "Alt+D",
   });
 
   async function loadSettings(): Promise<void> {

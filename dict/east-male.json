@@ -1,3 +1,8 @@
 [
-{"dictId":"male-given"}
+{"dictId":"male-given"},
+{"term":"德来","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"民安","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"天福","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"天阳","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"雨程","group":"","nameType":"given","genderType":"male","genre":"east"}
 ]

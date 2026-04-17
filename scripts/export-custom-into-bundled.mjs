@@ -35,6 +35,9 @@ const TARGET_CONFIG = {
   "others.json": {
     dictId: "others",
   },
+  "items.json": {
+    dictId: "items",
+  },
 };
 
 function printHelp() {
@@ -216,6 +219,9 @@ function detectTargetFile(entry) {
   if (nameType === "other" || nameType === "others") {
     return "others.json";
   }
+  if (nameType === "item" || nameType === "items") {
+    return "items.json";
+  }
   return null;
 }
 
@@ -303,6 +309,15 @@ function toBundledEntry(entry, targetFile) {
       term,
       group,
       nameType: "others",
+      genderType: normalizeGenderType(entry.genderType),
+      genre: normalizeGenreType(entry.genre),
+    };
+  }
+  if (targetFile === "items.json") {
+    return {
+      term,
+      group,
+      nameType: "item",
       genderType: normalizeGenderType(entry.genderType),
       genre: normalizeGenreType(entry.genre),
     };

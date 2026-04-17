@@ -98,9 +98,9 @@ watch(
           v-model="hotkeyModel"
           type="text"
           maxlength="16"
-          placeholder="Alt+Z"
+          placeholder="Alt+D"
         />
-        <small>当前仅支持 Alt + 单个英文字母，例如 Alt+Z。</small>
+        <small>当前仅支持 Alt + 单个英文字母，例如 Alt+D。</small>
       </label>
 
       <div class="settings-actions">

@@ -27,6 +27,10 @@
     "dictName": "[内置]常见法术",
     "order": 100
   },
+  "items": {
+    "dictName": "[内置]道具物品",
+    "order": 101
+  },
   "novels": {
     "dictName": "[内置]小说角色",
     "order": 200

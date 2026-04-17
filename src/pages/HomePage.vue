@@ -13,6 +13,7 @@ const {
   getGenderIconClass,
   getNameTypeIcons,
   handleEntryClick,
+  handleResultWheel,
   loading,
   isGenderFilterEditable,
   nextPage,
@@ -127,7 +128,7 @@ watch(settingsVisible, (visible) => {
         </button>
       </section>
 
-      <section class="result-panel">
+      <section class="result-panel" @wheel="handleResultWheel">
         <div class="result-summary">
           <span>命中词条：[{{ result.total }}]</span>
           <p v-if="toastMessage" class="system-tip" :class="`tone-${toastTone}`">{{ toastMessage }}</p>

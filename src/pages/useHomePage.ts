@@ -89,6 +89,9 @@ export function useHomePage() {
 
   let unlistenEntryUpdated: (() => void) | null = null;
   let unlistenEditorOpenRequest: (() => void) | null = null;
+  let wheelPageCooldownTimer: ReturnType<typeof setTimeout> | null = null;
+  let wheelPageLocked = false;
+  let wheelDeltaAccumulator = 0;
 
   async function createEditorWindow(): Promise<void> {
     const existing = await WebviewWindow.getByLabel("editor");
@@ -184,6 +187,53 @@ export function useHomePage() {
     }
     filters.page += 1;
     await query(false);
+  }
+
+  function handleResultWheel(event: WheelEvent): void {
+    if (event.ctrlKey) {
+      return;
+    }
+    if (loading.value || result.value.pageCount <= 1) {
+      return;
+    }
+    if (settingsVisible.value) {
+      return;
+    }
+
+    wheelDeltaAccumulator += event.deltaY;
+    const threshold = 60;
+    if (Math.abs(wheelDeltaAccumulator) < threshold) {
+      return;
+    }
+
+    const direction = wheelDeltaAccumulator > 0 ? 1 : -1;
+    wheelDeltaAccumulator = 0;
+
+    if (wheelPageLocked) {
+      return;
+    }
+
+    if (direction > 0 && filters.page >= result.value.pageCount) {
+      return;
+    }
+    if (direction < 0 && filters.page <= 1) {
+      return;
+    }
+
+    wheelPageLocked = true;
+    event.preventDefault();
+    if (wheelPageCooldownTimer) {
+      clearTimeout(wheelPageCooldownTimer);
+    }
+    wheelPageCooldownTimer = setTimeout(() => {
+      wheelPageLocked = false;
+    }, 240);
+
+    if (direction > 0) {
+      void nextPage();
+      return;
+    }
+    void prevPage();
   }
 
   async function openEditor(entry: QueryNameEntry): Promise<void> {
@@ -352,6 +402,10 @@ export function useHomePage() {
   });
 
   onBeforeUnmount(() => {
+    if (wheelPageCooldownTimer) {
+      clearTimeout(wheelPageCooldownTimer);
+      wheelPageCooldownTimer = null;
+    }
     if (unlistenEntryUpdated) {
       unlistenEntryUpdated();
       unlistenEntryUpdated = null;
@@ -381,6 +435,7 @@ export function useHomePage() {
     getGenderIconClass,
     getNameTypeIcons,
     handleEntryClick,
+    handleResultWheel,
     loading,
     nextPage,
     openEditor,

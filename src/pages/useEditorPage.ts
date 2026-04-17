@@ -23,8 +23,8 @@ export function useEditorPage() {
   });
   const isGenderTypeEditable = computed(() => isGenderEditableByNameType(form.nameType));
   let unlistenSeedUpdated: (() => void) | null = null;
-  let bundledHintSeq = 0;
-  let bundledHintTimer: ReturnType<typeof setTimeout> | null = null;
+  let bundledLookupSeq = 0;
+  let bundledLookupTimer: ReturnType<typeof setTimeout> | null = null;
 
   type TakeEditorSeedResult =
     | { ok: true; seed: string | null }
@@ -52,27 +52,55 @@ export function useEditorPage() {
     editorModeLabel.value = "[添加]";
   }
 
-  async function refreshBundledExistsHint(term: string): Promise<void> {
+  function applyEntryToForm(entry: NameEntry, preserveTerm: boolean): void {
+    if (!preserveTerm) {
+      form.term = entry.term;
+    }
+    form.genre = entry.genre;
+    form.group = entry.group ?? "";
+    form.nameType = entry.nameType === "both" ? "surname" : entry.nameType;
+    form.genderType = isGenderEditableByNameType(form.nameType) ? entry.genderType : "both";
+  }
+
+  async function refreshBundledLookup(
+    term: string,
+    options: { autofill: boolean; preserveTerm: boolean },
+  ): Promise<NameEntry | null> {
     const normalizedTerm = term.trim();
     if (!normalizedTerm || editingTerm.value) {
       bundledExistsDictName.value = "";
-      return;
+      return null;
     }
 
-    const seq = ++bundledHintSeq;
+    const seq = ++bundledLookupSeq;
     try {
-      const dictName = await invoke<string | null>("get_bundled_entry_dict_name", {
-        term: normalizedTerm,
-      });
-      if (seq !== bundledHintSeq) {
-        return;
+      const [dictName, bundledEntry] = await Promise.all([
+        invoke<string | null>("get_bundled_entry_dict_name", {
+          term: normalizedTerm,
+        }),
+        invoke<NameEntry | null>("get_bundled_entry", {
+          term: normalizedTerm,
+        }),
+      ]);
+      if (seq !== bundledLookupSeq) {
+        return bundledEntry;
       }
       bundledExistsDictName.value = dictName ?? "";
+      if (
+        options.autofill &&
+        bundledEntry &&
+        !editingTerm.value &&
+        form.term.trim() === normalizedTerm
+      ) {
+        applyEntryToForm(bundledEntry, options.preserveTerm);
+      }
+      return bundledEntry;
     } catch {
-      if (seq !== bundledHintSeq) {
-        return;
+      if (seq !== bundledLookupSeq) {
+        return null;
       }
       bundledExistsDictName.value = "";
+      return null;
     }
   }
 
@@ -86,18 +114,14 @@ export function useEditorPage() {
 
     const existing = await invoke<NameEntry | null>("get_entry", { term: normalizedTerm });
     if (existing) {
-      form.term = existing.term;
-      form.genre = existing.genre;
-      form.group = existing.group ?? "";
-      form.nameType = existing.nameType === "both" ? "surname" : existing.nameType;
-      form.genderType = isGenderEditableByNameType(form.nameType) ? existing.genderType : "both";
+      applyEntryToForm(existing, false);
       editingTerm.value = existing.term;
       editorModeLabel.value = "[修改]";
       bundledExistsDictName.value = "";
-      bundledHintSeq += 1;
+      bundledLookupSeq += 1;
     } else {
       resetFormWithTerm(normalizedTerm);
-      await refreshBundledExistsHint(normalizedTerm);
+      await refreshBundledLookup(normalizedTerm, { autofill: true, preserveTerm: false });
     }
   }
 
@@ -187,9 +211,9 @@ export function useEditorPage() {
   });
 
   onBeforeUnmount(() => {
-    if (bundledHintTimer) {
-      clearTimeout(bundledHintTimer);
-      bundledHintTimer = null;
+    if (bundledLookupTimer) {
+      clearTimeout(bundledLookupTimer);
+      bundledLookupTimer = null;
     }
     if (unlistenSeedUpdated) {
       unlistenSeedUpdated();
@@ -210,11 +234,11 @@ export function useEditorPage() {
   watch(
     () => form.term,
     (value) => {
-      if (bundledHintTimer) {
-        clearTimeout(bundledHintTimer);
+      if (bundledLookupTimer) {
+        clearTimeout(bundledLookupTimer);
       }
-      bundledHintTimer = setTimeout(() => {
-        void refreshBundledExistsHint(value);
+      bundledLookupTimer = setTimeout(() => {
+        void refreshBundledLookup(value, { autofill: true, preserveTerm: true });
       }, 220);
     },
   );

@@ -8,9 +8,10 @@ mod store;
 use crate::app::{
     bootstrap::setup_app,
     commands::{
-        close_editor_window, delete_entry, get_app_settings, get_bundled_entry_dict_name, get_entry,
-        list_dictionaries, open_editor_window, query_entries, save_app_settings, set_editor_seed,
-        set_hotkey_enabled, take_editor_seed, upsert_entry,
+        close_editor_window, delete_entry, get_app_settings, get_bundled_entry,
+        get_bundled_entry_dict_name, get_entry, list_dictionaries, open_editor_window,
+        query_entries, save_app_settings, set_editor_seed, set_hotkey_enabled, take_editor_seed,
+        upsert_entry,
     },
     state::{AppState, EditorSeed, HotkeyEnabled, HotkeyShutdown, HotkeyState, SettingsState},
 };
@@ -51,6 +52,7 @@ pub fn run() {
             query_entries,
             list_dictionaries,
             get_entry,
+            get_bundled_entry,
             get_bundled_entry_dict_name,
             upsert_entry,
             delete_entry,

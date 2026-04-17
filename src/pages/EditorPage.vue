@@ -25,6 +25,20 @@ const confirmDialogRef = ref<HTMLElement | null>(null);
 const pageContentRef = ref<HTMLElement | null>(null);
 let restoreFocusTarget: HTMLElement | null = null;
 
+function onEditorKeydown(event: KeyboardEvent): void {
+  if (event.isComposing || deleteConfirmVisible.value) {
+    return;
+  }
+  if (!event.ctrlKey || event.key !== "Enter") {
+    return;
+  }
+  if (saving.value || deleting.value) {
+    return;
+  }
+  event.preventDefault();
+  void saveEntry();
+}
+
 function onConfirmKeydown(event: KeyboardEvent): void {
   if (!confirmDialogRef.value) {
     return;
@@ -58,7 +72,7 @@ watch(deleteConfirmVisible, async (visible) => {
 </script>
 
 <template>
-  <main class="editor-page">
+  <main class="editor-page" @keydown.capture="onEditorKeydown">
     <div ref="pageContentRef" class="editor-content">
       <h1>编辑词条 {{ editorModeLabel }}</h1>
 

@@ -267,6 +267,19 @@ impl EntryStore {
             .map(|dict| dict.name.clone())
     }
 
+    pub(crate) fn get_bundled_entry(&self, term: &str) -> Option<NameEntry> {
+        let key = make_term_key(term);
+        if key.is_empty() {
+            return None;
+        }
+        self.bundled.iter().find_map(|dict| {
+            dict.index
+                .get(&key)
+                .and_then(|idx| dict.entries.get(*idx))
+                .cloned()
+        })
+    }
+
     pub(crate) fn upsert(&mut self, mut entry: NameEntry) -> Result<(), String> {
         entry.term = entry.term.trim().to_string();
         entry.group = entry.group.trim().to_string();

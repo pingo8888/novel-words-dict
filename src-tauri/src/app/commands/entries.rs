@@ -48,6 +48,18 @@ pub(crate) fn get_bundled_entry_dict_name(
 }
 
 #[tauri::command]
+pub(crate) fn get_bundled_entry(
+    state: State<AppState>,
+    term: String,
+) -> Result<Option<NameEntry>, String> {
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "读取词条失败：状态锁已中毒（poisoned）".to_string())?;
+    Ok(store.get_bundled_entry(&term))
+}
+
+#[tauri::command]
 pub(crate) fn upsert_entry(
     app: AppHandle,
     state: State<AppState>,

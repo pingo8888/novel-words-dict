@@ -156,20 +156,25 @@ impl EntryStore {
         if name_type != "surname" && name_type != "given" {
             gender_type = "all".to_string();
         }
-        let keyword = request
+        let keyword_tokens: Vec<String> = request
             .keyword
             .as_deref()
             .unwrap_or("")
-            .trim()
-            .to_lowercase();
+            .split_whitespace()
+            .map(|item| item.to_lowercase())
+            .filter(|item| !item.is_empty())
+            .collect();
 
         let matches_item = |entry: &super::query::QueryItem| {
             matches_genre_filter(&genre_type, entry.genre)
                 && matches_name_type_filter(&name_type, entry.name_type)
                 && matches_gender_type_filter(&gender_type, entry.gender_type)
-                && (keyword.is_empty()
-                    || entry.term_norm.contains(&keyword)
-                    || entry.group_norm.contains(&keyword))
+                && (keyword_tokens.is_empty()
+                    || keyword_tokens.iter().all(|token| {
+                        entry.term_norm.contains(token)
+                            || entry.group_norm.contains(token)
+                            || entry.name_type_norm.contains(token)
+                    }))
         };
 
         let mut matched: Vec<&super::query::QueryItem> = Vec::new();

@@ -2,10 +2,27 @@ use std::collections::HashMap;
 
 use crate::core::sort::build_term_sort_key;
 use crate::core::text::{make_term_key, normalize_text};
-use crate::core::types::NameEntry;
+use crate::core::types::{NameEntry, NameType};
 use crate::{CUSTOM_DICT_ID, CUSTOM_DICT_NAME};
 
 use super::query::QueryItem;
+
+fn name_type_search_text(value: NameType) -> &'static str {
+    match value {
+        NameType::Both => "both 姓氏 名字",
+        NameType::Surname => "surname 姓氏",
+        NameType::Given => "given 名字",
+        NameType::Place => "place 地名",
+        NameType::Gear => "gear 装备",
+        NameType::Item => "item 物品",
+        NameType::Skill => "skill 技能",
+        NameType::Incantation => "incantation 咒语",
+        NameType::Faction => "faction 势力",
+        NameType::Nickname => "nickname 绰号",
+        NameType::Creature => "creature 生物",
+        NameType::Others => "others 其他",
+    }
+}
 
 #[derive(Debug, Clone)]
 pub(crate) struct DictionaryData {
@@ -70,6 +87,7 @@ impl DictionaryData {
                 editable: self.editable,
                 term_norm: normalize_text(&entry.term),
                 group_norm: normalize_text(&entry.group),
+                name_type_norm: normalize_text(name_type_search_text(entry.name_type)),
                 sort_bucket: sort_key.bucket,
                 sort_initial: sort_key.initial,
                 sort_pinyin: sort_key.pinyin,

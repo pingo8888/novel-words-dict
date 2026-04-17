@@ -1,5 +1,5 @@
 [
-{"dictId":"skills","dictName":"[内置]常见法术","order":100},
+{"dictId":"skills"},
 {"term":"暗黑星辰","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},
 {"term":"暴风球","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},
 {"term":"庇护术","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},

@@ -20,6 +20,7 @@ const LEGACY_DATA_FILE_NAME: &str = "entries.ndjson";
 const SETTINGS_FILE_NAME: &str = "settings.json";
 const DEFAULT_HOTKEY: &str = "Alt+Z";
 const BUNDLED_DICT_DIR_NAME: &str = "dict";
+const BUNDLED_DICT_ORDER_FILE_NAME: &str = "dict-orders.json";
 const ALL_DICT_ID: &str = "all";
 const ALL_DICT_NAME: &str = "所有词库";
 const CUSTOM_DICT_ID: &str = "custom";

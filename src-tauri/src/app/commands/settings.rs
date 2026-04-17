@@ -7,7 +7,7 @@ use tauri::{AppHandle, State};
 use crate::app::state::{AppState, HotkeyState, SettingsState};
 use crate::infra::paths::{
     normalize_dict_dir, resolve_entries_file_path, resolve_project_data_dir, same_dir_path,
-    validate_dict_dir_path,
+    sanitize_windows_verbatim_prefix, validate_dict_dir_path,
 };
 use crate::infra::settings::{
     default_settings, normalize_hotkey, persist_app_settings, AppSettings,
@@ -30,9 +30,9 @@ pub(crate) struct SettingsResponse {
 
 fn build_settings_response(settings: &AppSettings, project_data_dir: &Path) -> SettingsResponse {
     SettingsResponse {
-        dict_dir: settings.dict_dir.clone(),
+        dict_dir: sanitize_windows_verbatim_prefix(settings.dict_dir.as_str()),
         hotkey: settings.hotkey.clone(),
-        project_data_dir: project_data_dir.to_string_lossy().to_string(),
+        project_data_dir: sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref()),
     }
 }
 
@@ -88,7 +88,7 @@ pub(crate) fn save_app_settings(
     }
 
     let normalized_settings = AppSettings {
-        dict_dir: dict_dir_path.to_string_lossy().to_string(),
+        dict_dir: sanitize_windows_verbatim_prefix(dict_dir_path.to_string_lossy().as_ref()),
         hotkey: normalized_hotkey.clone(),
     };
     persist_app_settings(&app, &normalized_settings)?;

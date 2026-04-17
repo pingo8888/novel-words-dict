@@ -1,5 +1,5 @@
 [
-{"dictId":"novels","dictName":"[内置]小说角色","order":200},
+{"dictId":"novels"},
 {"term":"阿拉贡","group":"魔戒","nameType":"given","genderType":"male","genre":"west"},
 {"term":"埃尔隆德","group":"魔戒","nameType":"given","genderType":"male","genre":"west"},
 {"term":"埃弗拉德","group":"魔戒","nameType":"given","genderType":"male","genre":"west"},

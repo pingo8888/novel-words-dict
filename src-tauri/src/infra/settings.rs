@@ -4,7 +4,9 @@ use std::path::Path;
 use tauri::AppHandle;
 
 use crate::infra::files::replace_file_from_temp;
-use crate::infra::paths::{resolve_project_data_dir, resolve_settings_file_path};
+use crate::infra::paths::{
+    resolve_project_data_dir, resolve_settings_file_path, sanitize_windows_verbatim_prefix,
+};
 use crate::DEFAULT_HOTKEY;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -56,7 +58,7 @@ pub(crate) fn hotkey_virtual_key(hotkey: &str) -> u32 {
 
 pub(crate) fn default_settings(project_data_dir: &Path) -> AppSettings {
     AppSettings {
-        dict_dir: project_data_dir.to_string_lossy().to_string(),
+        dict_dir: sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref()),
         hotkey: DEFAULT_HOTKEY.to_string(),
     }
 }
@@ -67,7 +69,8 @@ fn parse_settings_text(text: &str, project_data_dir: &Path) -> Result<AppSetting
     let dict_dir = patch
         .dict_dir
         .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| project_data_dir.to_string_lossy().to_string());
+        .map(|value| sanitize_windows_verbatim_prefix(value.as_str()))
+        .unwrap_or_else(|| sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref()));
     let hotkey = normalize_hotkey(patch.hotkey.as_deref().unwrap_or(DEFAULT_HOTKEY));
     Ok(AppSettings { dict_dir, hotkey })
 }

@@ -44,6 +44,10 @@ function parseArgs(argv) {
   return options;
 }
 
+function isDictOrderFile(fileName) {
+  return fileName.trim().toLowerCase() === "dict-orders.json";
+}
+
 function isEntryItem(item) {
   return (
     item !== null &&
@@ -169,7 +173,12 @@ function main() {
 
     const files = fs
       .readdirSync(options.dictDir, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".json"))
+      .filter(
+        (entry) =>
+          entry.isFile() &&
+          entry.name.toLowerCase().endsWith(".json") &&
+          !isDictOrderFile(entry.name),
+      )
       .map((entry) => path.join(options.dictDir, entry.name))
       .sort((a, b) => a.localeCompare(b, "en"));
 

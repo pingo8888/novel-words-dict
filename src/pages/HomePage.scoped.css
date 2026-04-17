@@ -340,6 +340,24 @@
   border: 0;
 }
 
+.action-hints {
+  position: absolute;
+  left: 36px;
+  bottom: 30px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.action-hints p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #5b6778;
+  white-space: nowrap;
+}
+
 @media (max-width: 1200px) {
   .filters {
     grid-template-columns: 1fr 1fr;
@@ -352,5 +370,10 @@
   .entry-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: repeat(20, minmax(84px, 1fr));
+  }
+
+  .action-hints {
+    left: 20px;
+    bottom: 20px;
   }
 }

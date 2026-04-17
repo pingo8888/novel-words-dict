@@ -8,12 +8,13 @@ use crate::core::filter::{matches_gender_type_filter, matches_genre_filter, matc
 use crate::core::text::make_term_key;
 use crate::core::types::{DictionaryMeta, DictionaryOption, NameEntry};
 use crate::infra::files::{
-    collect_json_files, is_custom_entries_file, load_entries_from_json_file, load_entries_from_ndjson_file,
-    replace_file_from_temp, sanitize_dict_id,
+    collect_json_files, is_bundled_dict_order_file, is_custom_entries_file, load_bundled_dict_configs,
+    load_entries_from_json_file, load_entries_from_ndjson_file, replace_file_from_temp, sanitize_dict_id,
 };
 use crate::infra::paths::resolve_bundled_dict_dir_candidates;
 use crate::{
-    ALL_DICT_ID, ALL_DICT_NAME, CUSTOM_DICT_ID, CUSTOM_DICT_NAME, LEGACY_DATA_FILE_NAME, PAGE_SIZE,
+    ALL_DICT_ID, ALL_DICT_NAME, BUNDLED_DICT_ORDER_FILE_NAME, CUSTOM_DICT_ID, CUSTOM_DICT_NAME,
+    LEGACY_DATA_FILE_NAME, PAGE_SIZE,
 };
 
 use super::dictionary::DictionaryData;
@@ -405,6 +406,7 @@ impl EntryStore {
             entries: Vec<NameEntry>,
         }
 
+        let dict_config_map = load_bundled_dict_configs(&dict_dir.join(BUNDLED_DICT_ORDER_FILE_NAME));
         let mut grouped: HashMap<String, BundledBucket> = HashMap::new();
         let mut files = match collect_json_files(dict_dir) {
             Ok(value) => value,
@@ -416,6 +418,9 @@ impl EntryStore {
         files.sort();
         for (file_index, file) in files.into_iter().enumerate() {
             if is_custom_entries_file(&file) {
+                continue;
+            }
+            if is_bundled_dict_order_file(&file) {
                 continue;
             }
             let loaded = match load_entries_from_json_file(&file) {
@@ -431,11 +436,6 @@ impl EntryStore {
                 .unwrap_or("bundled")
                 .trim()
                 .to_string();
-            let declared_order = loaded
-                .meta
-                .as_ref()
-                .and_then(|meta| meta.order)
-                .unwrap_or(i32::MAX);
             let mut id = loaded
                 .meta
                 .as_ref()
@@ -445,17 +445,32 @@ impl EntryStore {
             if id.is_empty() || id == CUSTOM_DICT_ID {
                 id = format!("bundled-{}", sanitize_dict_id(&fallback_id));
             }
+            let declared_order = loaded
+                .meta
+                .as_ref()
+                .and_then(|meta| meta.order)
+                .unwrap_or(i32::MAX);
+            let resolved_order = dict_config_map
+                .get(&id)
+                .and_then(|config| config.order)
+                .unwrap_or(declared_order);
 
-            let name = loaded
+            let fallback_name = loaded
                 .meta
                 .as_ref()
                 .map(|meta| meta.dict_name.trim().to_string())
                 .filter(|value| !value.is_empty())
                 .unwrap_or_else(|| fallback_id.clone());
+            let resolved_name = dict_config_map
+                .get(&id)
+                .and_then(|config| config.dict_name.as_ref())
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+                .unwrap_or(fallback_name);
 
             let entries = loaded.entries;
             if let Some(existing) = grouped.get_mut(&id) {
-                let same_meta = existing.order == declared_order && existing.name == name;
+                let same_meta = existing.order == resolved_order && existing.name == resolved_name;
                 if same_meta {
                     existing.entries.extend(entries);
                     continue;
@@ -478,9 +493,9 @@ impl EntryStore {
             grouped.insert(
                 resolved_id,
                 BundledBucket {
-                    order: declared_order,
+                    order: resolved_order,
                     file_index,
-                    name,
+                    name: resolved_name,
                     entries,
                 },
             );

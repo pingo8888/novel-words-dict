@@ -124,7 +124,12 @@ function getBundledJsonFiles(bundledDir) {
   }
   return fs
     .readdirSync(bundledDir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".json"))
+    .filter(
+      (entry) =>
+        entry.isFile() &&
+        entry.name.toLowerCase().endsWith(".json") &&
+        entry.name.toLowerCase() !== "dict-orders.json",
+    )
     .map((entry) => path.join(bundledDir, entry.name));
 }
 

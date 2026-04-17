@@ -48,7 +48,7 @@ watch(settingsVisible, (visible) => {
     <div ref="pageContentRef" class="home-content">
       <div class="top-row">
         <p class="description-inline">
-          总词条数：〔{{ result.totalAll }}〕，取词快捷键：〔{{ activeHotkey }}〕
+          总词条数：[{{ result.totalAll }}]
         </p>
         <button class="settings-icon-btn" type="button" title="设置" @click="openSettings">
           <Settings :size="16" :stroke-width="2" />
@@ -118,7 +118,7 @@ watch(settingsVisible, (visible) => {
 
       <section class="result-panel">
         <div class="result-summary">
-          <span>命中词条：〔{{ result.total }}〕</span>
+          <span>命中词条：[{{ result.total }}]</span>
           <p v-if="toastMessage" class="system-tip" :class="`tone-${toastTone}`">{{ toastMessage }}</p>
         </div>
 
@@ -188,6 +188,9 @@ watch(settingsVisible, (visible) => {
           </button>
         </div>
       </section>
+    </div>
+    <div class="action-hints">
+      <p>　复制：[左键]　编辑：[右键]　查词：[Ctrl+左键]　添加：[{{ activeHotkey }}]</p>
     </div>
     <p
       v-if="toastMessage"

@@ -8,7 +8,7 @@ use tauri::AppHandle;
 use tauri::Manager;
 
 use crate::infra::files::{
-    collect_json_files, is_custom_entries_file, load_entries_from_json_file,
+    collect_json_files, is_bundled_dict_order_file, is_custom_entries_file, load_entries_from_json_file,
 };
 use crate::{BUNDLED_DICT_DIR_NAME, CUSTOM_DICT_ID, DATA_FILE_NAME, SETTINGS_FILE_NAME};
 const BUNDLED_SYNC_MANIFEST_NAME: &str = ".bundled-sync-manifest.json";
@@ -46,6 +46,19 @@ pub(crate) fn normalize_dict_dir(input: &str, project_data_dir: &Path) -> PathBu
             project_data_dir.join(candidate)
         }
     }
+}
+
+pub(crate) fn sanitize_windows_verbatim_prefix(raw: &str) -> String {
+    #[cfg(target_os = "windows")]
+    {
+        if let Some(rest) = raw.strip_prefix(r"\\?\UNC\") {
+            return format!(r"\\{rest}");
+        }
+        if let Some(rest) = raw.strip_prefix(r"\\?\") {
+            return rest.to_string();
+        }
+    }
+    raw.to_string()
 }
 
 pub(crate) fn normalize_path_for_compare(path: &Path) -> PathBuf {
@@ -131,7 +144,7 @@ pub(crate) fn validate_dict_dir_path(path: &Path, project_data_dir: &Path) -> Re
     if !is_path_within(&allowed_base, &canonical) {
         return Err(format!(
             "词库目录必须位于项目数据目录内（{}）",
-            allowed_base.display()
+            sanitize_windows_verbatim_prefix(allowed_base.to_string_lossy().as_ref())
         ));
     }
 
@@ -145,7 +158,7 @@ pub(crate) fn validate_dict_dir_path(path: &Path, project_data_dir: &Path) -> Re
             if is_path_within(&base, &canonical) {
                 return Err(format!(
                     "词库目录不能位于系统目录下（{}）",
-                    base.display()
+                    sanitize_windows_verbatim_prefix(base.to_string_lossy().as_ref())
                 ));
             }
         }
@@ -207,6 +220,9 @@ fn has_non_custom_json_file(path: &Path) -> bool {
     };
     for file in files {
         if is_custom_entries_file(&file) {
+            continue;
+        }
+        if is_bundled_dict_order_file(&file) {
             continue;
         }
         let Ok(loaded) = load_entries_from_json_file(&file) else {
@@ -316,10 +332,14 @@ pub(crate) fn sync_bundled_dict_to_install_dir<R: tauri::Runtime>(app: &AppHandl
         if is_custom_entries_file(&file) {
             continue;
         }
-        let Some(name) = file.file_name() else {
-            continue;
+        let target_file = if is_bundled_dict_order_file(&file) {
+            target_dir.join(crate::BUNDLED_DICT_ORDER_FILE_NAME)
+        } else {
+            let Some(name) = file.file_name() else {
+                continue;
+            };
+            target_dir.join(name)
         };
-        let target_file = target_dir.join(name);
         if let Err(err) = fs::copy(&file, &target_file) {
             eprintln!(
                 "复制内置词库失败 {} -> {}: {err}",

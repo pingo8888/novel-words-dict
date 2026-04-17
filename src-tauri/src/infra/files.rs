@@ -1,8 +1,15 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::core::types::{DictionaryMeta, LoadedJsonData, NameEntry};
-use crate::DATA_FILE_NAME;
+use crate::{BUNDLED_DICT_ORDER_FILE_NAME, DATA_FILE_NAME};
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct BundledDictConfig {
+    pub(crate) order: Option<i32>,
+    pub(crate) dict_name: Option<String>,
+}
 
 pub(crate) fn collect_json_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
     let read_dir = fs::read_dir(dir).map_err(|err| format!("读取数据目录失败: {err}"))?;
@@ -139,7 +146,7 @@ fn parse_dict_meta_from_object(map: &serde_json::Map<String, serde_json::Value>)
 
     let id = sanitize_dict_id(dict_id);
     let name = dict_name.trim().to_string();
-    if id.is_empty() || name.is_empty() {
+    if id.is_empty() {
         return None;
     }
     Some(DictionaryMeta {
@@ -163,6 +170,105 @@ pub(crate) fn is_custom_entries_file(path: &Path) -> bool {
     path.file_name()
         .and_then(|name| name.to_str())
         .is_some_and(|name| name.eq_ignore_ascii_case(DATA_FILE_NAME))
+}
+
+pub(crate) fn is_bundled_dict_order_file(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.eq_ignore_ascii_case(BUNDLED_DICT_ORDER_FILE_NAME))
+}
+
+pub(crate) fn load_bundled_dict_configs(path: &Path) -> HashMap<String, BundledDictConfig> {
+    let mut out = HashMap::new();
+    if !path.is_file() {
+        return out;
+    }
+
+    let Ok(raw) = fs::read_to_string(path) else {
+        return out;
+    };
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return out;
+    }
+
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) else {
+        return out;
+    };
+
+    match value {
+        serde_json::Value::Object(map) => {
+            for (key, config_value) in map {
+                let id = sanitize_dict_id(&key);
+                if id.is_empty() {
+                    continue;
+                }
+                if let Some(order) = config_value
+                    .as_i64()
+                    .and_then(|value| i32::try_from(value).ok())
+                {
+                    out.insert(
+                        id,
+                        BundledDictConfig {
+                            order: Some(order),
+                            dict_name: None,
+                        },
+                    );
+                    continue;
+                }
+
+                let serde_json::Value::Object(config_map) = config_value else {
+                    continue;
+                };
+                let order = config_map
+                    .get("order")
+                    .and_then(|value| value.as_i64())
+                    .and_then(|value| i32::try_from(value).ok());
+                let dict_name = config_map
+                    .get("dictName")
+                    .or_else(|| config_map.get("dict_name"))
+                    .and_then(|value| value.as_str())
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned);
+                out.insert(id, BundledDictConfig { order, dict_name });
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                let serde_json::Value::Object(map) = item else {
+                    continue;
+                };
+                let id = map
+                    .get("dictId")
+                    .or_else(|| map.get("dict_id"))
+                    .and_then(|value| value.as_str())
+                    .map(sanitize_dict_id)
+                    .unwrap_or_default();
+                let order = map
+                    .get("order")
+                    .and_then(|value| value.as_i64())
+                    .and_then(|value| i32::try_from(value).ok());
+                let dict_name = map
+                    .get("dictName")
+                    .or_else(|| map.get("dict_name"))
+                    .and_then(|value| value.as_str())
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned);
+                if id.is_empty() {
+                    continue;
+                }
+                if order.is_none() && dict_name.is_none() {
+                    continue;
+                }
+                out.insert(id, BundledDictConfig { order, dict_name });
+            }
+        }
+        _ => {}
+    }
+
+    out
 }
 
 pub(crate) fn load_entries_from_ndjson_file(path: &Path) -> Result<Vec<NameEntry>, String> {

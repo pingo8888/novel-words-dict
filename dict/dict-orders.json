@@ -1,0 +1,38 @@
+{
+  "male-given": {
+    "dictName": "[内置]男性名字",
+    "order": 1
+  },
+  "female-given": {
+    "dictName": "[内置]女性名字",
+    "order": 2
+  },
+  "surname": {
+    "dictName": "[内置]常见姓氏",
+    "order": 3
+  },
+  "nickname": {
+    "dictName": "[内置]昵称外号",
+    "order": 4
+  },
+  "place": {
+    "dictName": "[内置]常见地名",
+    "order": 5
+  },
+  "faction": {
+    "dictName": "[内置]势力名称",
+    "order": 6
+  },
+  "skills": {
+    "dictName": "[内置]常见法术",
+    "order": 100
+  },
+  "novels": {
+    "dictName": "[内置]小说角色",
+    "order": 200
+  },
+  "others": {
+    "dictName": "[内置]其他名称",
+    "order": 300
+  }
+}

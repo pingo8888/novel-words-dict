@@ -18,6 +18,7 @@ pub(crate) fn matches_name_type_filter(filter: &str, value: NameType) -> bool {
         "gear" => value == NameType::Gear || value == NameType::Both,
         "item" => value == NameType::Item || value == NameType::Both,
         "skill" => value == NameType::Skill || value == NameType::Both,
+        "incantation" => value == NameType::Incantation || value == NameType::Both,
         "faction" => value == NameType::Faction || value == NameType::Both,
         "nickname" => value == NameType::Nickname || value == NameType::Both,
         "creature" => value == NameType::Creature || value == NameType::Both,

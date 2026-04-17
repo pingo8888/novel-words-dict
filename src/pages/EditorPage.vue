@@ -115,6 +115,7 @@ watch(deleteConfirmVisible, async (visible) => {
             <option value="gear">装备</option>
             <option value="item">物品</option>
             <option value="skill">技能</option>
+            <option value="incantation">咒语</option>
             <option value="faction">势力</option>
             <option value="nickname">绰号</option>
             <option value="others">其他</option>

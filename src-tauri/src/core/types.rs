@@ -11,6 +11,7 @@ pub(crate) enum NameType {
     Gear,
     Item,
     Skill,
+    Incantation,
     Faction,
     Nickname,
     Creature,

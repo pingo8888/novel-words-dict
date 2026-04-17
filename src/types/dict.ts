@@ -6,6 +6,7 @@ export type NameType =
   | "gear"
   | "item"
   | "skill"
+  | "incantation"
   | "faction"
   | "nickname"
   | "creature"

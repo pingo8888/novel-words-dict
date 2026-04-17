@@ -26,3 +26,18 @@ impl HotkeyShutdown {
         self.0.store(true, Ordering::Relaxed);
     }
 }
+
+#[derive(Clone)]
+pub(crate) struct HotkeyEnabled(pub(crate) Arc<AtomicBool>);
+
+impl Default for HotkeyEnabled {
+    fn default() -> Self {
+        Self(Arc::new(AtomicBool::new(true)))
+    }
+}
+
+impl HotkeyEnabled {
+    pub(crate) fn set_enabled(&self, enabled: bool) {
+        self.0.store(enabled, Ordering::Relaxed);
+    }
+}

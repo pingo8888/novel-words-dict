@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { focusFirstElement, trapTabKey } from "../utils/a11y";
 
 const props = defineProps<{
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 
 const dialogRef = ref<HTMLElement | null>(null);
 let restoreFocusTarget: HTMLElement | null = null;
+let backdropPointerDown = false;
 
 const dictDirModel = computed({
   get: () => props.dictDir,
@@ -34,6 +36,21 @@ function closeDialog(): void {
   emit("close");
 }
 
+function onMaskPointerDown(event: PointerEvent): void {
+  backdropPointerDown = event.target === event.currentTarget;
+}
+
+function onMaskClick(event: MouseEvent): void {
+  if (event.target !== event.currentTarget) {
+    backdropPointerDown = false;
+    return;
+  }
+  if (backdropPointerDown) {
+    closeDialog();
+  }
+  backdropPointerDown = false;
+}
+
 function onDialogKeydown(event: KeyboardEvent): void {
   if (!dialogRef.value) {
     return;
@@ -44,6 +61,88 @@ function onDialogKeydown(event: KeyboardEvent): void {
     return;
   }
   trapTabKey(event, dialogRef.value);
+}
+
+function normalizeHotkeyFromKeyboardEvent(event: KeyboardEvent): string | null {
+  if (event.metaKey) {
+    return null;
+  }
+
+  const keyToken = extractHotkeyKeyToken(event);
+  if (!keyToken) {
+    return null;
+  }
+
+  const ctrl = event.ctrlKey;
+  const alt = event.altKey;
+  const shift = event.shiftKey;
+  const validModifierCombo = (alt && !ctrl && !shift) || (ctrl && alt && !shift);
+  if (!validModifierCombo) {
+    return null;
+  }
+
+  const parts: string[] = [];
+  if (ctrl) {
+    parts.push("Ctrl");
+  }
+  if (alt) {
+    parts.push("Alt");
+  }
+  if (shift) {
+    parts.push("Shift");
+  }
+  parts.push(keyToken);
+  return parts.join("+");
+}
+
+function extractHotkeyKeyToken(event: KeyboardEvent): string | null {
+  const code = event.code ?? "";
+  if (/^Key[A-Z]$/.test(code)) {
+    return code.slice(3);
+  }
+  if (/^Digit[0-9]$/.test(code)) {
+    return code.slice(5);
+  }
+
+  const rawKey = event.key;
+  if (rawKey === "Control" || rawKey === "Alt" || rawKey === "Shift") {
+    return null;
+  }
+  if (/^[a-z0-9]$/i.test(rawKey)) {
+    return rawKey.toUpperCase();
+  }
+  return null;
+}
+
+function onHotkeyInputKeydown(event: KeyboardEvent): void {
+  if (event.key === "Backspace" || event.key === "Delete") {
+    hotkeyModel.value = "";
+    event.preventDefault();
+    return;
+  }
+
+  const normalized = normalizeHotkeyFromKeyboardEvent(event);
+  if (!normalized) {
+    return;
+  }
+  hotkeyModel.value = normalized;
+  event.preventDefault();
+}
+
+async function setGlobalHotkeyEnabled(enabled: boolean): Promise<void> {
+  try {
+    await invoke("set_hotkey_enabled", { enabled });
+  } catch {
+    // Ignore bridge errors to keep settings input usable.
+  }
+}
+
+function onHotkeyInputFocus(): void {
+  void setGlobalHotkeyEnabled(false);
+}
+
+function onHotkeyInputBlur(): void {
+  void setGlobalHotkeyEnabled(true);
 }
 
 watch(
@@ -57,16 +156,26 @@ watch(
       }
       return;
     }
+    void setGlobalHotkeyEnabled(true);
     if (restoreFocusTarget && document.contains(restoreFocusTarget)) {
       restoreFocusTarget.focus();
     }
     restoreFocusTarget = null;
   },
 );
+
+onBeforeUnmount(() => {
+  void setGlobalHotkeyEnabled(true);
+});
 </script>
 
 <template>
-  <div v-if="visible" class="settings-mask" @click.self="closeDialog">
+  <div
+    v-if="visible"
+    class="settings-mask"
+    @pointerdown="onMaskPointerDown"
+    @click.self="onMaskClick"
+  >
     <section
       ref="dialogRef"
       class="settings-dialog"
@@ -98,9 +207,13 @@ watch(
           v-model="hotkeyModel"
           type="text"
           maxlength="16"
-          placeholder="Alt+D"
+          placeholder="Ctrl+Alt+D"
+          @keydown="onHotkeyInputKeydown"
+          @pointerdown="onHotkeyInputFocus"
+          @focus="onHotkeyInputFocus"
+          @blur="onHotkeyInputBlur"
         />
-        <small>当前仅支持 Alt + 单个英文字母，例如 Alt+D。</small>
+        <small>支持：Alt+键、Ctrl+Alt+键（例如 Alt+D、Ctrl+Alt+D）。</small>
       </label>
 
       <div class="settings-actions">

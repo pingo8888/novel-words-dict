@@ -102,13 +102,24 @@ watch(settingsVisible, (visible) => {
 
         <label class="field keyword">
           <span>关键字</span>
-          <input
-            v-model="filters.keyword"
-            type="text"
-            maxlength="120"
-            placeholder="输入词条或分组关键字"
-            @keyup.enter="query(true)"
-          />
+          <div class="keyword-input-wrap">
+            <input
+              v-model="filters.keyword"
+              type="text"
+              maxlength="120"
+              placeholder="输入词条或分组关键字"
+              @keyup.enter="query(true)"
+            />
+            <button
+              v-if="filters.keyword.length > 0"
+              type="button"
+              class="keyword-clear-btn"
+              aria-label="清空关键字"
+              @click="filters.keyword = ''"
+            >
+              ×
+            </button>
+          </div>
         </label>
 
         <button class="query-btn" type="button" :disabled="queryButtonLoading" @click="query(true)">

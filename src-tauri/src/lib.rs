@@ -10,9 +10,9 @@ use crate::app::{
     commands::{
         close_editor_window, delete_entry, get_app_settings, get_bundled_entry_dict_name, get_entry,
         list_dictionaries, open_editor_window, query_entries, save_app_settings, set_editor_seed,
-        take_editor_seed, upsert_entry,
+        set_hotkey_enabled, take_editor_seed, upsert_entry,
     },
-    state::{AppState, EditorSeed, HotkeyShutdown, HotkeyState, SettingsState},
+    state::{AppState, EditorSeed, HotkeyEnabled, HotkeyShutdown, HotkeyState, SettingsState},
 };
 
 const DATA_FILE_NAME: &str = "entries.json";
@@ -43,6 +43,7 @@ pub fn run() {
         .manage(SettingsState::default())
         .manage(EditorSeed::default())
         .manage(HotkeyState(Mutex::new(DEFAULT_HOTKEY.to_string())))
+        .manage(HotkeyEnabled::default())
         .manage(HotkeyShutdown::default())
         .plugin(tauri_plugin_opener::init())
         .setup(setup_app)
@@ -55,6 +56,7 @@ pub fn run() {
             delete_entry,
             get_app_settings,
             save_app_settings,
+            set_hotkey_enabled,
             open_editor_window,
             take_editor_seed,
             close_editor_window,

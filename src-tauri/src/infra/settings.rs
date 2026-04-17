@@ -9,6 +9,14 @@ use crate::infra::paths::{
 };
 use crate::DEFAULT_HOTKEY;
 
+#[derive(Debug, Clone, Copy)]
+struct ParsedHotkey {
+    ctrl: bool,
+    alt: bool,
+    shift: bool,
+    key: char,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AppSettings {
@@ -24,36 +32,29 @@ struct AppSettingsPatch {
 }
 
 pub(crate) fn normalize_hotkey(input: &str) -> String {
-    let compact = input.trim().replace(' ', "").to_ascii_uppercase();
-    let mut parts = compact.split('+');
-    let Some(modifier) = parts.next() else {
-        return DEFAULT_HOTKEY.to_string();
-    };
-    let Some(key) = parts.next() else {
-        return DEFAULT_HOTKEY.to_string();
-    };
-    if parts.next().is_some() || modifier != "ALT" {
-        return DEFAULT_HOTKEY.to_string();
-    }
-    if key.len() != 1 {
-        return DEFAULT_HOTKEY.to_string();
-    }
-    let letter = key.chars().next().unwrap_or('Z');
-    if !letter.is_ascii_alphabetic() {
-        return DEFAULT_HOTKEY.to_string();
-    }
-    format!("Alt+{}", letter.to_ascii_uppercase())
+    parse_hotkey(input)
+        .or_else(|| parse_hotkey(DEFAULT_HOTKEY))
+        .map(format_hotkey)
+        .unwrap_or_else(|| DEFAULT_HOTKEY.to_string())
 }
 
 pub(crate) fn hotkey_virtual_key(hotkey: &str) -> u32 {
-    let normalized = normalize_hotkey(hotkey);
-    // Current hotkey format only allows Alt+[A-Z], so ASCII letter code equals virtual-key code.
-    normalized
-        .chars()
-        .last()
-        .filter(|ch| ch.is_ascii_alphabetic())
-        .map(|ch| ch as u32)
-        .unwrap_or('Z' as u32)
+    parse_hotkey(hotkey)
+        .or_else(|| parse_hotkey(DEFAULT_HOTKEY))
+        .map(|parsed| parsed.key as u32)
+        .unwrap_or('D' as u32)
+}
+
+pub(crate) fn hotkey_modifier_state(hotkey: &str) -> (bool, bool, bool) {
+    let parsed = parse_hotkey(hotkey)
+        .or_else(|| parse_hotkey(DEFAULT_HOTKEY))
+        .unwrap_or(ParsedHotkey {
+            ctrl: false,
+            alt: true,
+            shift: false,
+            key: 'D',
+        });
+    (parsed.ctrl, parsed.alt, parsed.shift)
 }
 
 pub(crate) fn default_settings(project_data_dir: &Path) -> AppSettings {
@@ -73,6 +74,81 @@ fn parse_settings_text(text: &str, project_data_dir: &Path) -> Result<AppSetting
         .unwrap_or_else(|| sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref()));
     let hotkey = normalize_hotkey(patch.hotkey.as_deref().unwrap_or(DEFAULT_HOTKEY));
     Ok(AppSettings { dict_dir, hotkey })
+}
+
+fn parse_hotkey(input: &str) -> Option<ParsedHotkey> {
+    let compact = input.trim().replace(' ', "").to_ascii_uppercase();
+    if compact.is_empty() {
+        return None;
+    }
+
+    let parts: Vec<&str> = compact.split('+').collect();
+    if parts.len() < 2 || parts.len() > 4 {
+        return None;
+    }
+
+    let key_raw = parts.last().copied().unwrap_or_default();
+    if key_raw.len() != 1 {
+        return None;
+    }
+    let key = key_raw.chars().next()?;
+    if !key.is_ascii_alphanumeric() {
+        return None;
+    }
+
+    let mut ctrl = false;
+    let mut alt = false;
+    let mut shift = false;
+    for modifier in &parts[..parts.len() - 1] {
+        match *modifier {
+            "CTRL" => {
+                if ctrl {
+                    return None;
+                }
+                ctrl = true;
+            }
+            "ALT" => {
+                if alt {
+                    return None;
+                }
+                alt = true;
+            }
+            "SHIFT" => {
+                if shift {
+                    return None;
+                }
+                shift = true;
+            }
+            _ => return None,
+        }
+    }
+
+    let valid_modifier_combo = (alt && !ctrl && !shift) || (ctrl && alt && !shift);
+    if !valid_modifier_combo {
+        return None;
+    }
+
+    Some(ParsedHotkey {
+        ctrl,
+        alt,
+        shift,
+        key,
+    })
+}
+
+fn format_hotkey(parsed: ParsedHotkey) -> String {
+    let mut parts = Vec::with_capacity(4);
+    if parsed.ctrl {
+        parts.push("Ctrl".to_string());
+    }
+    if parsed.alt {
+        parts.push("Alt".to_string());
+    }
+    if parsed.shift {
+        parts.push("Shift".to_string());
+    }
+    parts.push(parsed.key.to_ascii_uppercase().to_string());
+    parts.join("+")
 }
 
 pub(crate) fn load_app_settings<R: tauri::Runtime>(app: &AppHandle<R>) -> Result<AppSettings, String> {

@@ -272,6 +272,9 @@ pub(crate) fn sync_bundled_dict_to_install_dir<R: tauri::Runtime>(app: &AppHandl
     if !source_dir.is_dir() {
         return;
     }
+    if same_dir_path(&source_dir, &target_dir) {
+        return;
+    }
     if let Err(err) = fs::create_dir_all(&target_dir) {
         eprintln!("创建安装目录词库失败 {}: {err}", target_dir.display());
         return;
@@ -291,6 +294,9 @@ pub(crate) fn sync_bundled_dict_to_install_dir<R: tauri::Runtime>(app: &AppHandl
         if is_custom_entries_file(file) {
             continue;
         }
+        if is_bundled_sync_manifest_file(file) {
+            continue;
+        }
         if let Some(name) = file.file_name().and_then(|value| value.to_str()) {
             source_names.insert(name.to_ascii_lowercase());
         }
@@ -304,6 +310,9 @@ pub(crate) fn sync_bundled_dict_to_install_dir<R: tauri::Runtime>(app: &AppHandl
                 std::collections::HashMap::new();
             for file in files {
                 if is_custom_entries_file(&file) {
+                    continue;
+                }
+                if is_bundled_sync_manifest_file(&file) {
                     continue;
                 }
                 let Some(name) = file.file_name().and_then(|value| value.to_str()) else {
@@ -332,6 +341,9 @@ pub(crate) fn sync_bundled_dict_to_install_dir<R: tauri::Runtime>(app: &AppHandl
         if is_custom_entries_file(&file) {
             continue;
         }
+        if is_bundled_sync_manifest_file(&file) {
+            continue;
+        }
         let target_file = if is_bundled_dict_order_file(&file) {
             target_dir.join(crate::BUNDLED_DICT_ORDER_FILE_NAME)
         } else {
@@ -352,6 +364,12 @@ pub(crate) fn sync_bundled_dict_to_install_dir<R: tauri::Runtime>(app: &AppHandl
     if let Err(err) = write_synced_manifest(&manifest_path, &source_names) {
         eprintln!("写入内置词库同步清单失败 {}: {err}", manifest_path.display());
     }
+}
+
+fn is_bundled_sync_manifest_file(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.eq_ignore_ascii_case(BUNDLED_SYNC_MANIFEST_NAME))
 }
 
 fn read_synced_manifest(path: &Path) -> HashSet<String> {

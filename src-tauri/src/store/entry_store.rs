@@ -174,6 +174,8 @@ impl EntryStore {
                         entry.term_norm.contains(token)
                             || entry.group_norm.contains(token)
                             || entry.name_type_norm.contains(token)
+                            || entry.gender_type_norm.contains(token)
+                            || entry.genre_norm.contains(token)
                     }))
         };
 

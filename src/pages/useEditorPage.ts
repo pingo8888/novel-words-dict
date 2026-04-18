@@ -11,7 +11,7 @@ export function useEditorPage() {
   const deleting = ref(false);
   const deleteConfirmVisible = ref(false);
   const { showToast, toastMessage, toastTone } = useToast();
-  const editorModeLabel = ref("[添加]");
+  const editorTitle = ref("添加词条");
   const editingTerm = ref("");
   const bundledExistsDictName = ref("");
   const form = reactive<NameEntry>({
@@ -29,6 +29,22 @@ export function useEditorPage() {
   type TakeEditorSeedResult =
     | { ok: true; seed: string | null }
     | { ok: false; error: string };
+
+  async function setEditorWindowTitle(title: string): Promise<void> {
+    try {
+      await invoke("set_editor_window_title", { title });
+    } catch {
+      // Ignore window title sync failures.
+    }
+  }
+
+  function applyEditorTitle(editing: boolean): void {
+    const nextTitle = editing ? "编辑词条" : "添加词条";
+    if (editorTitle.value !== nextTitle) {
+      editorTitle.value = nextTitle;
+    }
+    void setEditorWindowTitle(nextTitle);
+  }
 
   async function takeEditorSeed(): Promise<TakeEditorSeedResult> {
     try {
@@ -49,7 +65,7 @@ export function useEditorPage() {
     form.nameType = "surname";
     form.genderType = "both";
     editingTerm.value = "";
-    editorModeLabel.value = "[添加]";
+    applyEditorTitle(false);
   }
 
   function applyEntryToForm(entry: NameEntry, preserveTerm: boolean): void {
@@ -116,7 +132,7 @@ export function useEditorPage() {
     if (existing) {
       applyEntryToForm(existing, false);
       editingTerm.value = existing.term;
-      editorModeLabel.value = "[修改]";
+      applyEditorTitle(true);
       bundledExistsDictName.value = "";
       bundledLookupSeq += 1;
     } else {
@@ -250,7 +266,7 @@ export function useEditorPage() {
     deleteConfirmVisible,
     deleteEntry,
     deleting,
-    editorModeLabel,
+    editorTitle,
     editingTerm,
     form,
     isGenderTypeEditable,

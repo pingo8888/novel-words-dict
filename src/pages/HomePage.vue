@@ -110,7 +110,7 @@ watch(settingsVisible, (visible) => {
               v-model="filters.keyword"
               type="text"
               maxlength="120"
-              placeholder="输入关键字（词条/分组/名词类型），支持模糊搜索，空格分隔"
+              placeholder="输入关键字，支持模糊搜索，多个关键字用空格分隔"
               @keyup.enter="query(true)"
             />
             <button

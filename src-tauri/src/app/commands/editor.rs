@@ -56,3 +56,13 @@ pub(crate) fn close_editor_window(app: AppHandle) -> Result<(), String> {
 pub(crate) fn set_editor_seed(app: AppHandle, term: String) -> Result<(), String> {
     set_editor_seed_value(&app, &term)
 }
+
+#[tauri::command]
+pub(crate) fn set_editor_window_title(app: AppHandle, title: String) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("editor") {
+        window
+            .set_title(title.trim())
+            .map_err(|err| format!("设置编辑窗口标题失败: {err}"))?;
+    }
+    Ok(())
+}

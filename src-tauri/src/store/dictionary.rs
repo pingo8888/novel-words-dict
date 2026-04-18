@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::core::sort::build_term_sort_key;
 use crate::core::text::{make_term_key, normalize_text};
-use crate::core::types::{NameEntry, NameType};
+use crate::core::types::{GenderType, GenreType, NameEntry, NameType};
 use crate::{CUSTOM_DICT_ID, CUSTOM_DICT_NAME};
 
 use super::query::QueryItem;
@@ -21,6 +21,21 @@ fn name_type_search_text(value: NameType) -> &'static str {
         NameType::Nickname => "nickname 绰号",
         NameType::Creature => "creature 生物",
         NameType::Others => "others 其他",
+    }
+}
+
+fn gender_type_search_text(value: GenderType) -> &'static str {
+    match value {
+        GenderType::Male => "男性",
+        GenderType::Female => "女性",
+        GenderType::Both => "通用",
+    }
+}
+
+fn genre_search_text(value: GenreType) -> &'static str {
+    match value {
+        GenreType::East => "东方",
+        GenreType::West => "西方",
     }
 }
 
@@ -88,6 +103,8 @@ impl DictionaryData {
                 term_norm: normalize_text(&entry.term),
                 group_norm: normalize_text(&entry.group),
                 name_type_norm: normalize_text(name_type_search_text(entry.name_type)),
+                gender_type_norm: normalize_text(gender_type_search_text(entry.gender_type)),
+                genre_norm: normalize_text(genre_search_text(entry.genre)),
                 sort_bucket: sort_key.bucket,
                 sort_initial: sort_key.initial,
                 sort_pinyin: sort_key.pinyin,

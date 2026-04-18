@@ -10,7 +10,7 @@ const {
   deleteConfirmVisible,
   deleteEntry,
   deleting,
-  editorModeLabel,
+  editorTitle,
   editingTerm,
   form,
   isGenderTypeEditable,
@@ -74,7 +74,7 @@ watch(deleteConfirmVisible, async (visible) => {
 <template>
   <main class="editor-page" @keydown.capture="onEditorKeydown">
     <div ref="pageContentRef" class="editor-content">
-      <h1>编辑词条 {{ editorModeLabel }}</h1>
+      <h1>{{ editorTitle }}</h1>
 
       <div class="form-grid">
         <label class="field full">

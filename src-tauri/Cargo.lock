@@ -2228,21 +2228,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "name-dict"
-version = "0.1.2"
-dependencies = [
- "arboard",
- "pinyin",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tauri-plugin-single-instance",
- "windows-sys 0.59.0",
-]
-
-[[package]]
 name = "ndk"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2283,6 +2268,21 @@ name = "nodrop"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
+
+[[package]]
+name = "novel-words-dict"
+version = "0.1.2"
+dependencies = [
+ "arboard",
+ "pinyin",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tauri-plugin-single-instance",
+ "windows-sys 0.59.0",
+]
 
 [[package]]
 name = "num-conv"

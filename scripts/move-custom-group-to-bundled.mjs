@@ -12,7 +12,7 @@ Arguments:
 
 Options:
   --dry-run             Preview changes without writing files
-  --settings <path>     Settings file path (default: %APPDATA%/com.local.name-dict/settings.json)
+  --settings <path>     Settings file path (default: %APPDATA%/com.local.novel-words-dict/settings.json)
   --custom <path>       Custom entries.json path (overrides --settings)
   --dict-dir <path>     Bundled dict directory (default: ./dict)
   --backup              Create backup before writing changed files
@@ -122,7 +122,7 @@ function resolveDefaultSettingsPath() {
   if (!appData) {
     throw new Error("APPDATA is not available; please provide --settings or --custom.");
   }
-  return path.join(appData, "com.local.name-dict", "settings.json");
+  return path.join(appData, "com.local.novel-words-dict", "settings.json");
 }
 
 function resolveCustomEntriesPath(options) {
@@ -380,3 +380,4 @@ function main() {
 }
 
 main();
+

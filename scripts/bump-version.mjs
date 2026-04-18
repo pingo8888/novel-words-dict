@@ -175,7 +175,8 @@ function main() {
       if (fs.existsSync(lockPath)) {
         targets.push({
           filePath: lockPath,
-          updater: (filePath, version) => updateCargoLockRootVersion(filePath, "name-dict", version),
+          updater: (filePath, version) =>
+            updateCargoLockRootVersion(filePath, "novel-words-dict", version),
           label: "src-tauri/Cargo.lock",
         });
       }

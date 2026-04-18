@@ -41,7 +41,7 @@ fn capture_selected_text_from_system() -> Option<String> {
     // Prefer capture success even when clipboard is not plain text.
     let backup_text = clipboard.get_text().ok();
     let marker = format!(
-        "__name_dict_marker_{}__",
+        "__novel_words_dict_marker_{}__",
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
@@ -204,3 +204,4 @@ where
 
 #[cfg(not(target_os = "windows"))]
 pub(crate) fn start_hotkey_listener<R: tauri::Runtime>(_app: AppHandle<R>) {}
+

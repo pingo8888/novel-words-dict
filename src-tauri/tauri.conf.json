@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "name-dict",
+  "productName": "novel-words-dict",
   "version": "0.1.2",
-  "identifier": "com.local.name-dict",
+  "identifier": "com.local.novel-words-dict",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",

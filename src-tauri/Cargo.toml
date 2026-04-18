@@ -1,6 +1,6 @@
 [package]
 name = "novel-words-dict"
-version = "0.1.2"
+version = "0.1.3"
 description = "Name dictionary desktop app"
 authors = ["novel-words-dict contributors"]
 edition = "2021"
@@ -33,3 +33,4 @@ windows-sys = { version = "0.59", features = [
   "Win32_System_DataExchange",
   "Win32_Storage_FileSystem",
 ] }
+

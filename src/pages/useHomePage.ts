@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { getVersion } from "@tauri-apps/api/app";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useHomeSettings } from "./useHomeSettings";
@@ -51,6 +52,7 @@ export function useHomePage() {
 
   const loading = ref(false);
   const queryButtonLoading = ref(false);
+  const appVersion = ref("");
   const { showToast, toastMessage, toastTone } = useToast();
   const dictionaries = ref<DictionaryOption[]>([
     { id: "all", name: "所有词库", editable: false },
@@ -385,6 +387,11 @@ export function useHomePage() {
   onMounted(async () => {
     await initializeSettings();
     try {
+      appVersion.value = await getVersion();
+    } catch {
+      appVersion.value = "";
+    }
+    try {
       await loadDictionaries();
     } catch (error) {
       showToast(resolveErrorMessage(error, "读取设置失败"), "error");
@@ -430,6 +437,7 @@ export function useHomePage() {
 
   return {
     activeHotkey,
+    appVersion,
     closeSettings,
     dictionaries,
     filters,

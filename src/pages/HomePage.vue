@@ -6,6 +6,7 @@ import { useHomePage } from "./useHomePage";
 
 const {
   activeHotkey,
+  appVersion,
   closeSettings,
   dictionaries,
   filters,
@@ -203,7 +204,8 @@ watch(settingsVisible, (visible) => {
       </section>
     </div>
     <div class="action-hints">
-      <p>　复制：[左键]　编辑：[右键]　查词：[Ctrl+左键]　添加：[{{ activeHotkey }}]</p>
+      <p class="action-hints-left">　复制：[左键]　编辑：[右键]　查词：[Ctrl+左键]　添加：[{{ activeHotkey }}]</p>
+      <p class="action-hints-right">版本：{{ appVersion || "-" }}</p>
     </div>
     <p
       v-if="toastMessage"

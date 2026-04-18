@@ -372,19 +372,31 @@
 .action-hints {
   position: absolute;
   left: 36px;
+  right: 36px;
   bottom: 30px;
   height: 34px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   pointer-events: none;
 }
 
-.action-hints p {
+.action-hints-left,
+.action-hints-right {
   margin: 0;
   font-size: 13px;
   line-height: 1.45;
   color: #5b6778;
+}
+
+.action-hints-left {
   white-space: nowrap;
+}
+
+.action-hints-right {
+  white-space: nowrap;
+  text-align: right;
 }
 
 @media (max-width: 1200px) {
@@ -403,6 +415,7 @@
 
   .action-hints {
     left: 20px;
+    right: 20px;
     bottom: 20px;
   }
 }

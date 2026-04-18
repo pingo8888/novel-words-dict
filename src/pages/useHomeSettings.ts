@@ -5,6 +5,7 @@ import { resolveErrorMessage } from "../utils/error";
 interface AppSettingsResponse {
   dictDir: string;
   hotkey: string;
+  searchEngine: "google" | "bing" | "baidu";
   projectDataDir: string;
 }
 
@@ -21,6 +22,7 @@ export function useHomeSettings(options: UseHomeSettingsOptions) {
   const settingsForm = reactive({
     dictDir: "",
     hotkey: "Alt+D",
+    searchEngine: "google" as "google" | "bing" | "baidu",
   });
 
   async function loadSettings(): Promise<void> {
@@ -28,6 +30,7 @@ export function useHomeSettings(options: UseHomeSettingsOptions) {
     projectDataDir.value = settings.projectDataDir;
     settingsForm.dictDir = settings.dictDir;
     settingsForm.hotkey = settings.hotkey;
+    settingsForm.searchEngine = settings.searchEngine;
     activeHotkey.value = settings.hotkey;
   }
 
@@ -62,11 +65,13 @@ export function useHomeSettings(options: UseHomeSettingsOptions) {
         request: {
           dictDir: settingsForm.dictDir.trim(),
           hotkey: settingsForm.hotkey.trim(),
+          searchEngine: settingsForm.searchEngine,
         },
       });
       projectDataDir.value = saved.projectDataDir;
       settingsForm.dictDir = saved.dictDir;
       settingsForm.hotkey = saved.hotkey;
+      settingsForm.searchEngine = saved.searchEngine;
       activeHotkey.value = saved.hotkey;
       settingsVisible.value = false;
       if (options.onAfterSave) {

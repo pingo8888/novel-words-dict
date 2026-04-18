@@ -222,8 +222,10 @@ watch(settingsVisible, (visible) => {
       :project-data-dir="projectDataDir"
       :dict-dir="settingsForm.dictDir"
       :hotkey="settingsForm.hotkey"
+      :search-engine="settingsForm.searchEngine"
       @update:dict-dir="settingsForm.dictDir = $event"
       @update:hotkey="settingsForm.hotkey = $event"
+      @update:search-engine="settingsForm.searchEngine = $event"
       @close="closeSettings"
       @save="saveSettings"
     />

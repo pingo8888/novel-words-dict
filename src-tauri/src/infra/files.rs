@@ -128,7 +128,9 @@ fn parse_dict_meta(value: &serde_json::Value) -> Option<DictionaryMeta> {
     parse_dict_meta_from_object(map)
 }
 
-fn parse_dict_meta_from_object(map: &serde_json::Map<String, serde_json::Value>) -> Option<DictionaryMeta> {
+fn parse_dict_meta_from_object(
+    map: &serde_json::Map<String, serde_json::Value>,
+) -> Option<DictionaryMeta> {
     let dict_id = map
         .get("dictId")
         .or_else(|| map.get("dict_id"))

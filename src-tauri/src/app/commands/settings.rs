@@ -10,7 +10,7 @@ use crate::infra::paths::{
     sanitize_windows_verbatim_prefix, validate_dict_dir_path,
 };
 use crate::infra::settings::{
-    default_settings, normalize_hotkey, persist_app_settings, AppSettings,
+    default_settings, normalize_hotkey, normalize_search_engine, persist_app_settings, AppSettings,
 };
 
 #[derive(Debug, Deserialize)]
@@ -18,6 +18,7 @@ use crate::infra::settings::{
 pub(crate) struct SaveSettingsRequest {
     dict_dir: String,
     hotkey: String,
+    search_engine: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -25,6 +26,7 @@ pub(crate) struct SaveSettingsRequest {
 pub(crate) struct SettingsResponse {
     dict_dir: String,
     hotkey: String,
+    search_engine: String,
     project_data_dir: String,
 }
 
@@ -32,7 +34,10 @@ fn build_settings_response(settings: &AppSettings, project_data_dir: &Path) -> S
     SettingsResponse {
         dict_dir: sanitize_windows_verbatim_prefix(settings.dict_dir.as_str()),
         hotkey: settings.hotkey.clone(),
-        project_data_dir: sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref()),
+        search_engine: settings.search_engine.clone(),
+        project_data_dir: sanitize_windows_verbatim_prefix(
+            project_data_dir.to_string_lossy().as_ref(),
+        ),
     }
 }
 
@@ -61,6 +66,8 @@ pub(crate) fn save_app_settings(
 ) -> Result<SettingsResponse, String> {
     let project_data_dir = resolve_project_data_dir(&app)?;
     let normalized_hotkey = normalize_hotkey(&request.hotkey);
+    let normalized_search_engine =
+        normalize_search_engine(request.search_engine.as_deref().unwrap_or("google"));
     let dict_dir_path = normalize_dict_dir(&request.dict_dir, &project_data_dir);
     let dict_dir_path = validate_dict_dir_path(&dict_dir_path, &project_data_dir)?;
     fs::create_dir_all(&dict_dir_path).map_err(|err| format!("创建词库目录失败: {err}"))?;
@@ -90,6 +97,7 @@ pub(crate) fn save_app_settings(
     let normalized_settings = AppSettings {
         dict_dir: sanitize_windows_verbatim_prefix(dict_dir_path.to_string_lossy().as_ref()),
         hotkey: normalized_hotkey.clone(),
+        search_engine: normalized_search_engine,
     };
     persist_app_settings(&app, &normalized_settings)?;
 

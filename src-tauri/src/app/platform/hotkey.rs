@@ -204,4 +204,3 @@ where
 
 #[cfg(not(target_os = "windows"))]
 pub(crate) fn start_hotkey_listener<R: tauri::Runtime>(_app: AppHandle<R>) {}
-

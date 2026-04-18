@@ -8,7 +8,8 @@ use tauri::AppHandle;
 use tauri::Manager;
 
 use crate::infra::files::{
-    collect_json_files, is_bundled_dict_order_file, is_custom_entries_file, load_entries_from_json_file,
+    collect_json_files, is_bundled_dict_order_file, is_custom_entries_file,
+    load_entries_from_json_file,
 };
 use crate::{BUNDLED_DICT_DIR_NAME, CUSTOM_DICT_ID, DATA_FILE_NAME, SETTINGS_FILE_NAME};
 const BUNDLED_SYNC_MANIFEST_NAME: &str = ".bundled-sync-manifest.json";
@@ -134,7 +135,10 @@ fn is_path_within(base: &Path, target: &Path) -> bool {
     }
 }
 
-pub(crate) fn validate_dict_dir_path(path: &Path, project_data_dir: &Path) -> Result<PathBuf, String> {
+pub(crate) fn validate_dict_dir_path(
+    path: &Path,
+    project_data_dir: &Path,
+) -> Result<PathBuf, String> {
     let canonical = normalize_path_for_compare(path);
     if canonical.parent().is_none() {
         return Err("词库目录不能为文件系统根目录".to_string());
@@ -362,7 +366,10 @@ pub(crate) fn sync_bundled_dict_to_install_dir<R: tauri::Runtime>(app: &AppHandl
     }
 
     if let Err(err) = write_synced_manifest(&manifest_path, &source_names) {
-        eprintln!("写入内置词库同步清单失败 {}: {err}", manifest_path.display());
+        eprintln!(
+            "写入内置词库同步清单失败 {}: {err}",
+            manifest_path.display()
+        );
     }
 }
 
@@ -392,7 +399,8 @@ fn read_synced_manifest(path: &Path) -> HashSet<String> {
 fn write_synced_manifest(path: &Path, names: &HashSet<String>) -> Result<(), String> {
     let mut list: Vec<String> = names.iter().cloned().collect();
     list.sort();
-    let payload = serde_json::to_string_pretty(&list).map_err(|err| format!("序列化清单失败: {err}"))?;
+    let payload =
+        serde_json::to_string_pretty(&list).map_err(|err| format!("序列化清单失败: {err}"))?;
     fs::write(path, payload).map_err(|err| format!("写入清单失败: {err}"))
 }
 

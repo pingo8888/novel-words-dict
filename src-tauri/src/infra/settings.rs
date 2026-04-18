@@ -8,6 +8,7 @@ use crate::infra::paths::{
     resolve_project_data_dir, resolve_settings_file_path, sanitize_windows_verbatim_prefix,
 };
 use crate::DEFAULT_HOTKEY;
+const DEFAULT_SEARCH_ENGINE: &str = "google";
 
 #[derive(Debug, Clone, Copy)]
 struct ParsedHotkey {
@@ -22,6 +23,7 @@ struct ParsedHotkey {
 pub(crate) struct AppSettings {
     pub(crate) dict_dir: String,
     pub(crate) hotkey: String,
+    pub(crate) search_engine: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -29,6 +31,7 @@ pub(crate) struct AppSettings {
 struct AppSettingsPatch {
     dict_dir: Option<String>,
     hotkey: Option<String>,
+    search_engine: Option<String>,
 }
 
 pub(crate) fn normalize_hotkey(input: &str) -> String {
@@ -57,10 +60,20 @@ pub(crate) fn hotkey_modifier_state(hotkey: &str) -> (bool, bool, bool) {
     (parsed.ctrl, parsed.alt, parsed.shift)
 }
 
+pub(crate) fn normalize_search_engine(input: &str) -> String {
+    match input.trim().to_ascii_lowercase().as_str() {
+        "google" => "google".to_string(),
+        "bing" => "bing".to_string(),
+        "baidu" => "baidu".to_string(),
+        _ => DEFAULT_SEARCH_ENGINE.to_string(),
+    }
+}
+
 pub(crate) fn default_settings(project_data_dir: &Path) -> AppSettings {
     AppSettings {
         dict_dir: sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref()),
         hotkey: DEFAULT_HOTKEY.to_string(),
+        search_engine: DEFAULT_SEARCH_ENGINE.to_string(),
     }
 }
 
@@ -71,9 +84,21 @@ fn parse_settings_text(text: &str, project_data_dir: &Path) -> Result<AppSetting
         .dict_dir
         .filter(|value| !value.trim().is_empty())
         .map(|value| sanitize_windows_verbatim_prefix(value.as_str()))
-        .unwrap_or_else(|| sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref()));
+        .unwrap_or_else(|| {
+            sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref())
+        });
     let hotkey = normalize_hotkey(patch.hotkey.as_deref().unwrap_or(DEFAULT_HOTKEY));
-    Ok(AppSettings { dict_dir, hotkey })
+    let search_engine = normalize_search_engine(
+        patch
+            .search_engine
+            .as_deref()
+            .unwrap_or(DEFAULT_SEARCH_ENGINE),
+    );
+    Ok(AppSettings {
+        dict_dir,
+        hotkey,
+        search_engine,
+    })
 }
 
 fn parse_hotkey(input: &str) -> Option<ParsedHotkey> {
@@ -151,7 +176,9 @@ fn format_hotkey(parsed: ParsedHotkey) -> String {
     parts.join("+")
 }
 
-pub(crate) fn load_app_settings<R: tauri::Runtime>(app: &AppHandle<R>) -> Result<AppSettings, String> {
+pub(crate) fn load_app_settings<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+) -> Result<AppSettings, String> {
     let project_data_dir = resolve_project_data_dir(app)?;
     let settings_path = resolve_settings_file_path(app)?;
     if !settings_path.exists() {

@@ -9,6 +9,7 @@ const props = defineProps<{
   projectDataDir: string;
   dictDir: string;
   hotkey: string;
+  searchEngine: "google" | "bing" | "baidu";
 }>();
 
 const emit = defineEmits<{
@@ -16,6 +17,7 @@ const emit = defineEmits<{
   save: [];
   "update:dictDir": [value: string];
   "update:hotkey": [value: string];
+  "update:searchEngine": [value: "google" | "bing" | "baidu"];
 }>();
 
 const dialogRef = ref<HTMLElement | null>(null);
@@ -30,6 +32,11 @@ const dictDirModel = computed({
 const hotkeyModel = computed({
   get: () => props.hotkey,
   set: (value: string) => emit("update:hotkey", value),
+});
+
+const searchEngineModel = computed({
+  get: () => props.searchEngine,
+  set: (value: "google" | "bing" | "baidu") => emit("update:searchEngine", value),
 });
 
 function closeDialog(): void {
@@ -214,6 +221,15 @@ onBeforeUnmount(() => {
           @blur="onHotkeyInputBlur"
         />
         <small>支持：Alt+键、Ctrl+Alt+键（例如 Alt+D、Ctrl+Alt+D）。</small>
+      </label>
+
+      <label class="field">
+        <span>Ctrl+左键搜索引擎</span>
+        <select v-model="searchEngineModel">
+          <option value="google">Google</option>
+          <option value="bing">Bing</option>
+          <option value="baidu">Baidu</option>
+        </select>
       </label>
 
       <div class="settings-actions">

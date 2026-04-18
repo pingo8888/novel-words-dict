@@ -4,12 +4,15 @@ use std::path::{Path, PathBuf};
 
 use tauri::AppHandle;
 
-use crate::core::filter::{matches_gender_type_filter, matches_genre_filter, matches_name_type_filter};
+use crate::core::filter::{
+    matches_gender_type_filter, matches_genre_filter, matches_name_type_filter,
+};
 use crate::core::text::make_term_key;
 use crate::core::types::{DictionaryMeta, DictionaryOption, NameEntry};
 use crate::infra::files::{
-    collect_json_files, is_bundled_dict_order_file, is_custom_entries_file, load_bundled_dict_configs,
-    load_entries_from_json_file, load_entries_from_ndjson_file, replace_file_from_temp, sanitize_dict_id,
+    collect_json_files, is_bundled_dict_order_file, is_custom_entries_file,
+    load_bundled_dict_configs, load_entries_from_json_file, load_entries_from_ndjson_file,
+    replace_file_from_temp, sanitize_dict_id,
 };
 use crate::infra::paths::resolve_bundled_dict_dir_candidates;
 use crate::{
@@ -20,7 +23,10 @@ use crate::{
 use super::dictionary::DictionaryData;
 use super::query::{QueryRequest, QueryResponse};
 
-fn compare_query_items(a: &super::query::QueryItem, b: &super::query::QueryItem) -> std::cmp::Ordering {
+fn compare_query_items(
+    a: &super::query::QueryItem,
+    b: &super::query::QueryItem,
+) -> std::cmp::Ordering {
     a.sort_bucket
         .cmp(&b.sort_bucket)
         .then_with(|| a.sort_initial.cmp(&b.sort_initial))
@@ -401,7 +407,8 @@ impl EntryStore {
 
     fn refresh_custom_term_keys(&mut self) {
         self.custom_term_keys.clear();
-        self.custom_term_keys.extend(self.custom.index.keys().cloned());
+        self.custom_term_keys
+            .extend(self.custom.index.keys().cloned());
     }
 
     fn load_bundled_dictionaries<R: tauri::Runtime>(
@@ -426,7 +433,8 @@ impl EntryStore {
             entries: Vec<NameEntry>,
         }
 
-        let dict_config_map = load_bundled_dict_configs(&dict_dir.join(BUNDLED_DICT_ORDER_FILE_NAME));
+        let dict_config_map =
+            load_bundled_dict_configs(&dict_dir.join(BUNDLED_DICT_ORDER_FILE_NAME));
         let mut grouped: HashMap<String, BundledBucket> = HashMap::new();
         let mut files = match collect_json_files(dict_dir) {
             Ok(value) => value,

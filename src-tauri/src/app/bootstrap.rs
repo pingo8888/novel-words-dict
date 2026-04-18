@@ -2,13 +2,13 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::Manager;
 
-use crate::app::platform::start_hotkey_listener;
 #[cfg(desktop)]
 use crate::app::platform::setup_tray_icon;
+use crate::app::platform::start_hotkey_listener;
 use crate::app::state::{AppState, HotkeyState, SettingsState};
 use crate::infra::paths::{
-    normalize_dict_dir, resolve_entries_file_path, resolve_project_data_dir, sync_bundled_dict_to_install_dir,
-    sanitize_windows_verbatim_prefix, validate_dict_dir_path,
+    normalize_dict_dir, resolve_entries_file_path, resolve_project_data_dir,
+    sanitize_windows_verbatim_prefix, sync_bundled_dict_to_install_dir, validate_dict_dir_path,
 };
 use crate::infra::settings::{
     default_settings, load_app_settings, persist_app_settings, should_persist_settings,

@@ -77,7 +77,12 @@ impl DictionaryData {
     pub(crate) fn rebuild_derived(&mut self) {
         self.entries.sort_by_cached_key(|entry| {
             let sort_key = build_term_sort_key(&entry.term);
-            (sort_key.bucket, sort_key.initial, sort_key.pinyin, entry.term.clone())
+            (
+                sort_key.bucket,
+                sort_key.initial,
+                sort_key.pinyin,
+                entry.term.clone(),
+            )
         });
 
         self.index.clear();

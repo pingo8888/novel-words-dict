@@ -40,6 +40,8 @@ interface DictionaryOption {
   editable: boolean;
 }
 
+type SearchEngine = "google" | "bing" | "baidu";
+
 export function useHomePage() {
   const filters = reactive<QueryRequest>({
     dictId: "all",
@@ -290,13 +292,28 @@ export function useHomePage() {
     return group ? `${group} ${term}` : term;
   }
 
+  function buildSearchUrl(text: string, searchEngine: SearchEngine): URL {
+    if (searchEngine === "bing") {
+      const url = new URL("https://www.bing.com/search");
+      url.searchParams.set("q", text);
+      return url;
+    }
+    if (searchEngine === "baidu") {
+      const url = new URL("https://www.baidu.com/s");
+      url.searchParams.set("wd", text);
+      return url;
+    }
+    const url = new URL("https://www.google.com/search");
+    url.searchParams.set("q", text);
+    return url;
+  }
+
   async function searchTermInBrowser(entry: QueryNameEntry): Promise<void> {
     const text = buildSearchText(entry);
     if (!text) {
       return;
     }
-    const url = new URL("https://www.google.com/search");
-    url.searchParams.set("q", text);
+    const url = buildSearchUrl(text, settingsForm.searchEngine);
     try {
       await openUrl(url);
       showToast(`搜索：${text}`);

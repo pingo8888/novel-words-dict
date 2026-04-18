@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use tauri::Manager;
 
 mod app;
 mod core;
@@ -46,6 +47,13 @@ pub fn run() {
         .manage(HotkeyState(Mutex::new(DEFAULT_HOTKEY.to_string())))
         .manage(HotkeyEnabled::default())
         .manage(HotkeyShutdown::default())
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(main_window) = app.get_webview_window("main") {
+                let _ = main_window.show();
+                let _ = main_window.unminimize();
+                let _ = main_window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .setup(setup_app)
         .invoke_handler(tauri::generate_handler![

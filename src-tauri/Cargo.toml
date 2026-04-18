@@ -1,6 +1,6 @@
 [package]
 name = "name-dict"
-version = "0.1.1"
+version = "0.1.2"
 description = "Name dictionary desktop app"
 authors = ["name-dict contributors"]
 edition = "2021"
@@ -20,6 +20,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 pinyin = "0.10"

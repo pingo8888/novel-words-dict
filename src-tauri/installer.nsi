@@ -944,24 +944,34 @@ Function CreateOrUpdateStartMenuShortcut
 FunctionEnd
 
 Function CreateOrUpdateDesktopShortcut
+  StrCpy $R0 0
+  IfFileExists "$DESKTOP\${PRODUCTNAME}.lnk" 0 +2
+    StrCpy $R0 1
+
   ; We used to use product name as MAINBINARYNAME
   ; migrate old shortcuts to target the new MAINBINARYNAME
   !insertmacro IsShortcutTarget "$DESKTOP\${PRODUCTNAME}.lnk" "$INSTDIR\$OldMainBinaryName"
   Pop $0
   ${If} $0 = 1
     !insertmacro SetShortcutTarget "$DESKTOP\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
-    Return
+    StrCpy $R0 1
   ${EndIf}
 
   ; Skip creating shortcut if in update mode or no shortcut mode
   ; but always create if migrating from wix
   ${If} $WixMode = 0
-    ${If} $UpdateMode = 1
-    ${OrIf} $NoShortcutMode = 1
+    ${If} $NoShortcutMode = 1
       Return
+    ${EndIf}
+    ${If} $UpdateMode = 1
+      ${If} $R0 != 1
+        Return
+      ${EndIf}
     ${EndIf}
   ${EndIf}
 
+  IfFileExists "$DESKTOP\${PRODUCTNAME}.lnk" 0 +2
+    Delete "$DESKTOP\${PRODUCTNAME}.lnk"
   CreateShortcut "$DESKTOP\${PRODUCTNAME}.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
   !insertmacro SetLnkAppUserModelId "$DESKTOP\${PRODUCTNAME}.lnk"
 FunctionEnd

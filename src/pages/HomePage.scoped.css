@@ -349,8 +349,13 @@
   pointer-events: none;
 }
 
-.top-row-system-tip {
-  max-width: min(48vw, 640px);
+.floating-system-tip {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: min(70vw, 720px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

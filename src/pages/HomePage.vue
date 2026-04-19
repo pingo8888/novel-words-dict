@@ -63,9 +63,6 @@ watch(settingsVisible, (visible) => {
           总词条数：[{{ result.totalAll }}]
         </p>
         <div class="top-row-actions">
-          <p v-if="toastMessage" class="system-tip top-row-system-tip" :class="`tone-${toastTone}`">
-            {{ toastMessage }}
-          </p>
           <button class="settings-icon-btn" type="button" title="设置" @click="openSettings">
             <Settings :size="16" :stroke-width="2" />
           </button>
@@ -221,6 +218,9 @@ watch(settingsVisible, (visible) => {
       <p class="action-hints-left">　复制：[左键]　编辑：[右键]　查词：[Ctrl+左键]　添加：[{{ activeHotkey }}]</p>
       <p class="action-hints-right">版本：{{ appVersion || "-" }}</p>
     </div>
+    <p v-if="toastMessage" class="system-tip floating-system-tip" :class="`tone-${toastTone}`">
+      {{ toastMessage }}
+    </p>
     <p
       v-if="toastMessage"
       class="sr-only"

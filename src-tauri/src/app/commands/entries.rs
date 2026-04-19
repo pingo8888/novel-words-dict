@@ -64,6 +64,7 @@ pub(crate) fn upsert_entry(
     app: AppHandle,
     state: State<AppState>,
     entry: NameEntry,
+    original_term: Option<String>,
 ) -> Result<(), String> {
     let term_for_event = entry.term.trim().to_string();
     {
@@ -71,7 +72,7 @@ pub(crate) fn upsert_entry(
             .store
             .lock()
             .map_err(|_| "保存词条失败：状态锁已中毒（poisoned）".to_string())?;
-        store.upsert(entry)?;
+        store.upsert(entry, original_term.as_deref())?;
     }
 
     let _ = app.emit_to("main", "entry-updated", term_for_event);

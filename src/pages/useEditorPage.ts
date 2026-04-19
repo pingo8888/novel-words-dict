@@ -168,6 +168,7 @@ export function useEditorPage() {
           nameType: form.nameType,
           genderType: isGenderTypeEditable.value ? form.genderType : "both",
         },
+        originalTerm: editingTerm.value || null,
       });
       await invoke("close_editor_window");
     } catch (error) {

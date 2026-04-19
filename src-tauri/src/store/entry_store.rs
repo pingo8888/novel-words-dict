@@ -293,7 +293,11 @@ impl EntryStore {
         })
     }
 
-    pub(crate) fn upsert(&mut self, mut entry: NameEntry) -> Result<(), String> {
+    pub(crate) fn upsert(
+        &mut self,
+        mut entry: NameEntry,
+        original_term: Option<&str>,
+    ) -> Result<(), String> {
         entry.term = entry.term.trim().to_string();
         entry.group = entry.group.trim().to_string();
         if entry.term.is_empty() {
@@ -301,7 +305,26 @@ impl EntryStore {
         }
 
         let key = make_term_key(&entry.term);
-        if let Some(existing_idx) = self.custom.index.get(&key).copied() {
+        if let Some(previous_term) = original_term {
+            let previous_key = make_term_key(previous_term);
+            if !previous_key.is_empty() && previous_key != key {
+                if let Some(previous_idx) = self
+                    .custom
+                    .entries
+                    .iter()
+                    .position(|item| make_term_key(&item.term) == previous_key)
+                {
+                    self.custom.entries.remove(previous_idx);
+                }
+            }
+        }
+
+        if let Some(existing_idx) = self
+            .custom
+            .entries
+            .iter()
+            .position(|item| make_term_key(&item.term) == key)
+        {
             self.custom.entries[existing_idx] = entry;
         } else {
             self.custom.entries.push(entry);

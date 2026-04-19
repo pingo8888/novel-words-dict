@@ -89,6 +89,10 @@
   color: #0f172a;
 }
 
+.settings-actions .check-update {
+  margin-right: auto;
+}
+
 .settings-actions .primary {
   border: 1px solid #2563eb;
   background: #2563eb;

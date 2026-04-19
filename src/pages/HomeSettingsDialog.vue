@@ -10,11 +10,13 @@ const props = defineProps<{
   dictDir: string;
   hotkey: string;
   searchEngine: "google" | "bing" | "baidu";
+  updateChecking: boolean;
 }>();
 
 const emit = defineEmits<{
   close: [];
   save: [];
+  checkUpdate: [];
   "update:dictDir": [value: string];
   "update:hotkey": [value: string];
   "update:searchEngine": [value: "google" | "bing" | "baidu"];
@@ -195,7 +197,7 @@ onBeforeUnmount(() => {
     >
       <h2 id="settings-dialog-title">设置</h2>
       <p id="settings-dialog-desc" class="settings-desc">
-        修改词库目录与快捷键，按 Esc 可关闭对话框。
+        修改词库目录、快捷键和搜索设置，按 Esc 可关闭对话框。
       </p>
       <label class="field">
         <span>自定词库保存目录</span>
@@ -233,6 +235,14 @@ onBeforeUnmount(() => {
       </label>
 
       <div class="settings-actions">
+        <button
+          type="button"
+          class="secondary check-update"
+          :disabled="settingsSaving || updateChecking"
+          @click="emit('checkUpdate')"
+        >
+          {{ updateChecking ? "检查中..." : "检查更新" }}
+        </button>
         <button type="button" class="secondary" @click="closeDialog">
           取消
         </button>

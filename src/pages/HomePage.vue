@@ -23,6 +23,7 @@ const {
   pageDisplay,
   prevPage,
   projectDataDir,
+  checkForUpdates,
   query,
   queryButtonLoading,
   renderItems,
@@ -31,6 +32,7 @@ const {
   settingsForm,
   settingsSaving,
   settingsVisible,
+  updateChecking,
   shouldShowGenderIcon,
   toastMessage,
   toastTone,
@@ -52,9 +54,14 @@ watch(settingsVisible, (visible) => {
         <p class="description-inline">
           总词条数：[{{ result.totalAll }}]
         </p>
-        <button class="settings-icon-btn" type="button" title="设置" @click="openSettings">
-          <Settings :size="16" :stroke-width="2" />
-        </button>
+        <div class="top-row-actions">
+          <p v-if="toastMessage" class="system-tip top-row-system-tip" :class="`tone-${toastTone}`">
+            {{ toastMessage }}
+          </p>
+          <button class="settings-icon-btn" type="button" title="设置" @click="openSettings">
+            <Settings :size="16" :stroke-width="2" />
+          </button>
+        </div>
       </div>
 
       <section class="filters">
@@ -133,7 +140,6 @@ watch(settingsVisible, (visible) => {
       <section class="result-panel" @wheel="handleResultWheel">
         <div class="result-summary">
           <span>命中词条：[{{ result.total }}]</span>
-          <p v-if="toastMessage" class="system-tip" :class="`tone-${toastTone}`">{{ toastMessage }}</p>
         </div>
 
         <div class="entry-grid">
@@ -223,9 +229,11 @@ watch(settingsVisible, (visible) => {
       :dict-dir="settingsForm.dictDir"
       :hotkey="settingsForm.hotkey"
       :search-engine="settingsForm.searchEngine"
+      :update-checking="updateChecking"
       @update:dict-dir="settingsForm.dictDir = $event"
       @update:hotkey="settingsForm.hotkey = $event"
       @update:search-engine="settingsForm.searchEngine = $event"
+      @check-update="checkForUpdates(true)"
       @close="closeSettings"
       @save="saveSettings"
     />

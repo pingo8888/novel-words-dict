@@ -32,6 +32,7 @@ const PAGE_SIZE: usize = 40;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
         .on_window_event(|window, event| {
             let label = window.label();
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
@@ -55,7 +56,11 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
-        .setup(setup_app)
+        .setup(|app| {
+            #[cfg(desktop)]
+            app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+            setup_app(app)
+        })
         .invoke_handler(tauri::generate_handler![
             query_entries,
             list_dictionaries,

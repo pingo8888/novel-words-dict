@@ -32,6 +32,14 @@
   font-size: 16px;
   font-weight: 400;
   color: #334155;
+  min-width: 0;
+}
+
+.top-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .settings-icon-btn {
@@ -330,10 +338,6 @@
 }
 
 .system-tip {
-  position: absolute;
-  top: 50%;
-  right: 2px;
-  transform: translateY(-50%);
   margin: 0;
   padding: 6px 14px;
   border-radius: 4px;
@@ -343,6 +347,13 @@
   font-size: 13px;
   font-weight: 700;
   pointer-events: none;
+}
+
+.top-row-system-tip {
+  max-width: min(48vw, 640px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .system-tip.tone-info {

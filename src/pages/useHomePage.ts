@@ -3,6 +3,8 @@ import { listen } from "@tauri-apps/api/event";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getVersion } from "@tauri-apps/api/app";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check, type Update } from "@tauri-apps/plugin-updater";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useHomeSettings } from "./useHomeSettings";
 import { useToast } from "../composables/useToast";
@@ -54,6 +56,7 @@ export function useHomePage() {
 
   const loading = ref(false);
   const queryButtonLoading = ref(false);
+  const updateChecking = ref(false);
   const appVersion = ref("");
   const { showToast, toastMessage, toastTone } = useToast();
   const dictionaries = ref<DictionaryOption[]>([
@@ -93,6 +96,7 @@ export function useHomePage() {
 
   let unlistenEntryUpdated: (() => void) | null = null;
   let unlistenEditorOpenRequest: (() => void) | null = null;
+  let startupUpdateTimer: ReturnType<typeof setTimeout> | null = null;
   let wheelPageCooldownTimer: ReturnType<typeof setTimeout> | null = null;
   let wheelPageLocked = false;
   let wheelDeltaAccumulator = 0;
@@ -331,6 +335,70 @@ export function useHomePage() {
     await copyTerm(entry.term);
   }
 
+  function buildUpdateConfirmText(update: Update): string {
+    const notes = (update.body ?? "").trim();
+    const notesPreview = notes.length > 400 ? `${notes.slice(0, 400)}...` : notes;
+    const notesText = notesPreview ? `\n\n更新说明：\n${notesPreview}` : "";
+    return `发现新版本 ${update.version}（当前 ${update.currentVersion}）。是否立即下载并安装？${notesText}`;
+  }
+
+  async function installUpdate(update: Update): Promise<void> {
+    await update.downloadAndInstall((event) => {
+      if (event.event === "Started") {
+        showToast("开始下载更新...");
+        return;
+      }
+      if (event.event === "Finished") {
+        showToast("下载完成，正在安装...");
+      }
+    });
+    const shouldRelaunch = window.confirm("更新安装完成，是否立即重启应用？");
+    if (!shouldRelaunch) {
+      showToast("更新已安装，请稍后重启应用生效");
+      return;
+    }
+    await relaunch();
+  }
+
+  async function checkForUpdates(manual = false): Promise<void> {
+    if (!manual && import.meta.env.DEV) {
+      return;
+    }
+
+    if (updateChecking.value) {
+      if (manual) {
+        showToast("正在检查更新，请稍候");
+      }
+      return;
+    }
+
+    updateChecking.value = true;
+    try {
+      const update = await check();
+      if (!update) {
+        if (manual) {
+          showToast("当前已是最新版本");
+        }
+        return;
+      }
+
+      const shouldInstall = window.confirm(buildUpdateConfirmText(update));
+      if (!shouldInstall) {
+        if (manual) {
+          showToast("已取消更新");
+        }
+        return;
+      }
+
+      await installUpdate(update);
+    } catch (error) {
+      const fallbackMessage = manual ? "检查更新失败" : "自动检查更新失败";
+      showToast(resolveErrorMessage(error, fallbackMessage), "error");
+    } finally {
+      updateChecking.value = false;
+    }
+  }
+
   function getNameTypeIcons(nameType: NameType): string[] {
     switch (nameType) {
       case "surname":
@@ -425,9 +493,16 @@ export function useHomePage() {
         showToast(resolveErrorMessage(error, "打开编辑窗口失败"), "error");
       }
     });
+    startupUpdateTimer = setTimeout(() => {
+      void checkForUpdates(false);
+    }, 1200);
   });
 
   onBeforeUnmount(() => {
+    if (startupUpdateTimer) {
+      clearTimeout(startupUpdateTimer);
+      startupUpdateTimer = null;
+    }
     if (wheelPageCooldownTimer) {
       clearTimeout(wheelPageCooldownTimer);
       wheelPageCooldownTimer = null;
@@ -470,6 +545,7 @@ export function useHomePage() {
     pageDisplay,
     prevPage,
     projectDataDir,
+    checkForUpdates,
     query,
     queryButtonLoading,
     renderItems,
@@ -479,6 +555,7 @@ export function useHomePage() {
     settingsForm,
     settingsSaving,
     settingsVisible,
+    updateChecking,
     shouldShowGenderIcon,
     toastMessage,
     toastTone,

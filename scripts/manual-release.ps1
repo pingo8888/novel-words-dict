@@ -108,6 +108,14 @@ if (-not (Test-Path $latestJson)) {
   Write-Error "未找到 updater 元数据：$latestJson"
 }
 
+Write-Host "正在清理 nsis 根目录产物，仅保留版本目录..."
+Get-ChildItem -Path $bundleDir -Filter "*-setup.exe" -File -ErrorAction SilentlyContinue | Remove-Item -Force
+Get-ChildItem -Path $bundleDir -Filter "*-setup.exe.sig" -File -ErrorAction SilentlyContinue | Remove-Item -Force
+$rootLatestJson = Join-Path $bundleDir "latest.json"
+if (Test-Path -LiteralPath $rootLatestJson) {
+  Remove-Item -LiteralPath $rootLatestJson -Force
+}
+
 Write-Host "==> 3/3 产物检查通过"
 Write-Host "Artifact dir: $artifactDir"
 Write-Host "Installer : $stagedInstaller"

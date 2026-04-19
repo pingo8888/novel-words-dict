@@ -37,6 +37,7 @@ npm run tauri signer generate -- --ci
    - `*-setup.exe`
    - `*-setup.exe.sig`
    - `latest.json`
+   - 脚本会清理 `nsis` 根目录同名产物，仅保留 `nsis/<tag>/` 目录中的发布文件。
 
 若构建未自动产出 `latest.json`，脚本会基于当前 `tag`、`origin` 仓库地址和安装包签名自动生成。
 

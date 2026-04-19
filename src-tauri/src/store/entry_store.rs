@@ -162,27 +162,37 @@ impl EntryStore {
         if name_type != "surname" && name_type != "given" {
             gender_type = "all".to_string();
         }
-        let keyword_tokens: Vec<String> = request
-            .keyword
-            .as_deref()
-            .unwrap_or("")
-            .split_whitespace()
-            .map(|item| item.to_lowercase())
-            .filter(|item| !item.is_empty())
-            .collect();
+        let mut normal_keyword_tokens: Vec<String> = Vec::new();
+        let mut group_keyword_tokens: Vec<String> = Vec::new();
+        for raw_token in request.keyword.as_deref().unwrap_or("").split_whitespace() {
+            let token = raw_token.to_lowercase();
+            if token.is_empty() {
+                continue;
+            }
+            if let Some(group_token) = token.strip_prefix('@') {
+                if !group_token.is_empty() {
+                    group_keyword_tokens.push(group_token.to_string());
+                }
+                continue;
+            }
+            normal_keyword_tokens.push(token);
+        }
 
         let matches_item = |entry: &super::query::QueryItem| {
             matches_genre_filter(&genre_type, entry.genre)
                 && matches_name_type_filter(&name_type, entry.name_type)
                 && matches_gender_type_filter(&gender_type, entry.gender_type)
-                && (keyword_tokens.is_empty()
-                    || keyword_tokens.iter().all(|token| {
+                && (normal_keyword_tokens.is_empty()
+                    || normal_keyword_tokens.iter().all(|token| {
                         entry.term_norm.contains(token)
-                            || entry.group_norm.contains(token)
                             || entry.name_type_norm.contains(token)
                             || entry.gender_type_norm.contains(token)
                             || entry.genre_norm.contains(token)
                     }))
+                && (group_keyword_tokens.is_empty()
+                    || group_keyword_tokens
+                        .iter()
+                        .all(|token| entry.group_norm.contains(token)))
         };
 
         let mut matched: Vec<&super::query::QueryItem> = Vec::new();

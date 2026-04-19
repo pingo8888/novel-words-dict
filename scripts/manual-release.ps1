@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 
 if (-not $Tag) {
   $pkg = Get-Content -Raw package.json | ConvertFrom-Json
-  $Tag = "v$($pkg.version)"
+  $Tag = "$($pkg.version)"
 }
 
 if (-not $env:TAURI_SIGNING_PRIVATE_KEY) {

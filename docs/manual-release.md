@@ -26,7 +26,7 @@ npm run tauri signer generate -- --ci
 推荐直接使用脚本：
 
 ```powershell
-./scripts/manual-release.ps1 -Tag v0.1.3
+./scripts/manual-release.ps1 -Tag 0.1.3
 ```
 
 脚本会执行：
@@ -42,12 +42,12 @@ npm run tauri signer generate -- --ci
 
 ## 3. 上传到 GitHub Release
 
-把上面 3 个文件上传到同一个稳定版 release（tag 例如 `v0.1.3`）。
+把上面 3 个文件上传到同一个稳定版 release（tag 例如 `0.1.3`）。
 
 如果你使用 GitHub CLI：
 
 ```bash
-gh release upload v0.1.3 "<installer>" "<installer>.sig" "<latest.json>" --clobber
+gh release upload 0.1.3 "<installer>" "<installer>.sig" "<latest.json>" --clobber
 ```
 
 ## 4. 验证更新

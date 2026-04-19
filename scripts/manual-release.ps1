@@ -46,12 +46,22 @@ if (-not $installer) {
 }
 
 $sigPath = "$($installer.FullName).sig"
-$latestJson = Join-Path $bundleDir "latest.json"
 
 if (-not (Test-Path $sigPath)) {
   Write-Error "未找到签名文件：$sigPath"
 }
 
+$artifactDir = Join-Path $bundleDir $Tag
+New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
+
+$stagedInstaller = Join-Path $artifactDir $installer.Name
+$stagedSigPath = "$stagedInstaller.sig"
+$latestJson = Join-Path $artifactDir "latest.json"
+
+Copy-Item -LiteralPath $installer.FullName -Destination $stagedInstaller -Force
+Copy-Item -LiteralPath $sigPath -Destination $stagedSigPath -Force
+
+Write-Host "已归档发布文件到版本目录：$artifactDir"
 Write-Host "正在按当前安装包与签名重写 latest.json ..."
 
 $pkg = Get-Content -Raw package.json | ConvertFrom-Json
@@ -70,10 +80,10 @@ $owner = $m.Groups["owner"].Value
 $repo = $m.Groups["repo"].Value
 $installerName = $installer.Name
 $downloadUrl = "https://github.com/$owner/$repo/releases/download/$Tag/$installerName"
-$signature = (Get-Content -LiteralPath $sigPath -Raw).Trim()
+$signature = (Get-Content -LiteralPath $stagedSigPath -Raw).Trim()
 
 if (-not $signature) {
-  Write-Error "签名文件为空：$sigPath"
+  Write-Error "签名文件为空：$stagedSigPath"
 }
 
 $platformInfo = [ordered]@{
@@ -99,10 +109,11 @@ if (-not (Test-Path $latestJson)) {
 }
 
 Write-Host "==> 3/3 产物检查通过"
-Write-Host "Installer : $($installer.FullName)"
-Write-Host "Signature : $sigPath"
+Write-Host "Artifact dir: $artifactDir"
+Write-Host "Installer : $stagedInstaller"
+Write-Host "Signature : $stagedSigPath"
 Write-Host "latest.json: $latestJson"
 
 Write-Host ""
 Write-Host "下一步上传到 GitHub Release（tag: $Tag）："
-Write-Host "gh release upload $Tag `"$($installer.FullName)`" `"$sigPath`" `"$latestJson`" --clobber"
+Write-Host "gh release upload $Tag `"$stagedInstaller`" `"$stagedSigPath`" `"$latestJson`" --clobber"

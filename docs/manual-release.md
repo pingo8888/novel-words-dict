@@ -33,10 +33,10 @@ npm run tauri signer generate -- --ci
 
 1. `npm run build`
 2. `npm run tauri build -- --config '{"build":{"beforeBuildCommand":""}}'`
-3. 检查以下 3 个发布必需文件：
-   - `src-tauri/target/release/bundle/nsis/*-setup.exe`
-   - `src-tauri/target/release/bundle/nsis/*-setup.exe.sig`
-   - `src-tauri/target/release/bundle/nsis/latest.json`
+3. 在 `src-tauri/target/release/bundle/nsis/<tag>/` 下归档以下 3 个发布必需文件：
+   - `*-setup.exe`
+   - `*-setup.exe.sig`
+   - `latest.json`
 
 若构建未自动产出 `latest.json`，脚本会基于当前 `tag`、`origin` 仓库地址和安装包签名自动生成。
 
@@ -47,7 +47,11 @@ npm run tauri signer generate -- --ci
 如果你使用 GitHub CLI：
 
 ```bash
-gh release upload 0.1.3 "<installer>" "<installer>.sig" "<latest.json>" --clobber
+gh release upload 0.1.3 \
+  "src-tauri/target/release/bundle/nsis/0.1.3/novel-words-dict_0.1.3_x64-setup.exe" \
+  "src-tauri/target/release/bundle/nsis/0.1.3/novel-words-dict_0.1.3_x64-setup.exe.sig" \
+  "src-tauri/target/release/bundle/nsis/0.1.3/latest.json" \
+  --clobber
 ```
 
 ## 4. 验证更新

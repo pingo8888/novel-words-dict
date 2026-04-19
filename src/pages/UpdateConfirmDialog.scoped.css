@@ -1,0 +1,62 @@
+.update-confirm-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+}
+
+.update-confirm-dialog {
+  width: min(520px, calc(100% - 36px));
+  border: 1px solid #d6deeb;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.25);
+  padding: 16px;
+}
+
+.update-confirm-dialog h2 {
+  margin: 0;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.update-confirm-dialog p {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: min(42vh, 360px);
+  overflow: auto;
+}
+
+.update-confirm-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.update-confirm-actions button {
+  min-width: 92px;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.update-confirm-actions .secondary {
+  color: #1f2937;
+  background: #e5e7eb;
+}
+
+.update-confirm-actions .primary {
+  color: #ffffff;
+  background: #2563eb;
+}

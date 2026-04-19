@@ -44,6 +44,13 @@ interface DictionaryOption {
 
 type SearchEngine = "google" | "bing" | "baidu";
 
+interface UpdateConfirmOptions {
+  title: string;
+  message: string;
+  confirmText: string;
+  cancelText: string;
+}
+
 export function useHomePage() {
   const filters = reactive<QueryRequest>({
     dictId: "all",
@@ -57,6 +64,11 @@ export function useHomePage() {
   const loading = ref(false);
   const queryButtonLoading = ref(false);
   const updateChecking = ref(false);
+  const updateConfirmVisible = ref(false);
+  const updateConfirmTitle = ref("");
+  const updateConfirmMessage = ref("");
+  const updateConfirmConfirmText = ref("确认");
+  const updateConfirmCancelText = ref("取消");
   const appVersion = ref("");
   const { showToast, toastMessage, toastTone } = useToast();
   const dictionaries = ref<DictionaryOption[]>([
@@ -98,6 +110,7 @@ export function useHomePage() {
   let unlistenEditorOpenRequest: (() => void) | null = null;
   let startupUpdateTimer: ReturnType<typeof setTimeout> | null = null;
   let wheelPageCooldownTimer: ReturnType<typeof setTimeout> | null = null;
+  let resolveUpdateConfirm: ((confirmed: boolean) => void) | null = null;
   let wheelPageLocked = false;
   let wheelDeltaAccumulator = 0;
 
@@ -342,6 +355,39 @@ export function useHomePage() {
     return `发现新版本 ${update.version}（当前 ${update.currentVersion}）。是否立即下载并安装？${notesText}`;
   }
 
+  function resolveAndCloseUpdateConfirm(confirmed: boolean): void {
+    const resolver = resolveUpdateConfirm;
+    resolveUpdateConfirm = null;
+    updateConfirmVisible.value = false;
+    if (resolver) {
+      resolver(confirmed);
+    }
+  }
+
+  function acceptUpdateConfirm(): void {
+    resolveAndCloseUpdateConfirm(true);
+  }
+
+  function cancelUpdateConfirm(): void {
+    resolveAndCloseUpdateConfirm(false);
+  }
+
+  function requestUpdateConfirm(options: UpdateConfirmOptions): Promise<boolean> {
+    if (resolveUpdateConfirm) {
+      resolveUpdateConfirm(false);
+      resolveUpdateConfirm = null;
+    }
+    updateConfirmTitle.value = options.title;
+    updateConfirmMessage.value = options.message;
+    updateConfirmConfirmText.value = options.confirmText;
+    updateConfirmCancelText.value = options.cancelText;
+    updateConfirmVisible.value = true;
+
+    return new Promise<boolean>((resolve) => {
+      resolveUpdateConfirm = resolve;
+    });
+  }
+
   async function installUpdate(update: Update): Promise<void> {
     await update.downloadAndInstall((event) => {
       if (event.event === "Started") {
@@ -352,7 +398,12 @@ export function useHomePage() {
         showToast("下载完成，正在安装...");
       }
     });
-    const shouldRelaunch = window.confirm("更新安装完成，是否立即重启应用？");
+    const shouldRelaunch = await requestUpdateConfirm({
+      title: "更新安装完成",
+      message: "是否立即重启应用？",
+      confirmText: "立即重启",
+      cancelText: "稍后重启",
+    });
     if (!shouldRelaunch) {
       showToast("更新已安装，请稍后重启应用生效");
       return;
@@ -382,7 +433,12 @@ export function useHomePage() {
         return;
       }
 
-      const shouldInstall = window.confirm(buildUpdateConfirmText(update));
+      const shouldInstall = await requestUpdateConfirm({
+        title: "发现新版本",
+        message: buildUpdateConfirmText(update),
+        confirmText: "下载并安装",
+        cancelText: "暂不更新",
+      });
       if (!shouldInstall) {
         if (manual) {
           showToast("已取消更新");
@@ -499,6 +555,10 @@ export function useHomePage() {
   });
 
   onBeforeUnmount(() => {
+    if (resolveUpdateConfirm) {
+      resolveUpdateConfirm(false);
+      resolveUpdateConfirm = null;
+    }
     if (startupUpdateTimer) {
       clearTimeout(startupUpdateTimer);
       startupUpdateTimer = null;
@@ -556,6 +616,13 @@ export function useHomePage() {
     settingsSaving,
     settingsVisible,
     updateChecking,
+    updateConfirmVisible,
+    updateConfirmTitle,
+    updateConfirmMessage,
+    updateConfirmConfirmText,
+    updateConfirmCancelText,
+    acceptUpdateConfirm,
+    cancelUpdateConfirm,
     shouldShowGenderIcon,
     toastMessage,
     toastTone,

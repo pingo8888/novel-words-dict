@@ -52,49 +52,47 @@ if (-not (Test-Path $sigPath)) {
   Write-Error "未找到签名文件：$sigPath"
 }
 
-if (-not (Test-Path $latestJson)) {
-  Write-Host "未检测到 latest.json，正在按当前产物自动生成..."
+Write-Host "正在按当前安装包与签名重写 latest.json ..."
 
-  $pkg = Get-Content -Raw package.json | ConvertFrom-Json
-  $version = "$($pkg.version)"
-  if (-not $version) {
-    Write-Error "无法从 package.json 读取版本号。"
-  }
-
-  $origin = (git remote get-url origin).Trim()
-  $m = [regex]::Match($origin, "github\.com[:/](?<owner>[^/]+)/(?<repo>[^/.]+)(?:\.git)?$")
-  if (-not $m.Success) {
-    Write-Error "无法从 origin 推断 GitHub 仓库，请手动创建 latest.json。origin=$origin"
-  }
-
-  $owner = $m.Groups["owner"].Value
-  $repo = $m.Groups["repo"].Value
-  $installerName = $installer.Name
-  $downloadUrl = "https://github.com/$owner/$repo/releases/download/$Tag/$installerName"
-  $signature = (Get-Content -LiteralPath $sigPath -Raw).Trim()
-
-  if (-not $signature) {
-    Write-Error "签名文件为空：$sigPath"
-  }
-
-  $platformInfo = [ordered]@{
-    url = $downloadUrl
-    signature = $signature
-  }
-
-  $manifest = [ordered]@{
-    version = $version
-    notes = ""
-    pub_date = (Get-Date).ToUniversalTime().ToString("o")
-    platforms = [ordered]@{
-      "windows-x86_64-nsis" = $platformInfo
-      "windows-x86_64" = $platformInfo
-    }
-  }
-
-  $manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $latestJson -Encoding utf8NoBOM
-  Write-Host "已生成：$latestJson"
+$pkg = Get-Content -Raw package.json | ConvertFrom-Json
+$version = "$($pkg.version)"
+if (-not $version) {
+  Write-Error "无法从 package.json 读取版本号。"
 }
+
+$origin = (git remote get-url origin).Trim()
+$m = [regex]::Match($origin, "github\.com[:/](?<owner>[^/]+)/(?<repo>[^/.]+)(?:\.git)?$")
+if (-not $m.Success) {
+  Write-Error "无法从 origin 推断 GitHub 仓库，请手动创建 latest.json。origin=$origin"
+}
+
+$owner = $m.Groups["owner"].Value
+$repo = $m.Groups["repo"].Value
+$installerName = $installer.Name
+$downloadUrl = "https://github.com/$owner/$repo/releases/download/$Tag/$installerName"
+$signature = (Get-Content -LiteralPath $sigPath -Raw).Trim()
+
+if (-not $signature) {
+  Write-Error "签名文件为空：$sigPath"
+}
+
+$platformInfo = [ordered]@{
+  url = $downloadUrl
+  signature = $signature
+}
+
+$manifest = [ordered]@{
+  version = $version
+  notes = ""
+  pub_date = (Get-Date).ToUniversalTime().ToString("o")
+  platforms = [ordered]@{
+    "windows-x86_64-nsis" = $platformInfo
+    "windows-x86_64" = $platformInfo
+  }
+}
+
+$manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $latestJson -Encoding utf8NoBOM
+Write-Host "已生成：$latestJson"
 
 if (-not (Test-Path $latestJson)) {
   Write-Error "未找到 updater 元数据：$latestJson"

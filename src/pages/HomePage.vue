@@ -2,11 +2,14 @@
 import { ref, watch } from "vue";
 import { Lock, Mars, Settings, Venus, VenusAndMars } from "lucide-vue-next";
 import HomeSettingsDialog from "./HomeSettingsDialog.vue";
+import UpdateConfirmDialog from "./UpdateConfirmDialog.vue";
 import { useHomePage } from "./useHomePage";
 
 const {
   activeHotkey,
+  acceptUpdateConfirm,
   appVersion,
+  cancelUpdateConfirm,
   closeSettings,
   dictionaries,
   filters,
@@ -33,6 +36,11 @@ const {
   settingsSaving,
   settingsVisible,
   updateChecking,
+  updateConfirmCancelText,
+  updateConfirmConfirmText,
+  updateConfirmMessage,
+  updateConfirmTitle,
+  updateConfirmVisible,
   shouldShowGenderIcon,
   toastMessage,
   toastTone,
@@ -236,6 +244,15 @@ watch(settingsVisible, (visible) => {
       @check-update="checkForUpdates(true)"
       @close="closeSettings"
       @save="saveSettings"
+    />
+    <UpdateConfirmDialog
+      :visible="updateConfirmVisible"
+      :title="updateConfirmTitle"
+      :message="updateConfirmMessage"
+      :confirm-text="updateConfirmConfirmText"
+      :cancel-text="updateConfirmCancelText"
+      @confirm="acceptUpdateConfirm"
+      @cancel="cancelUpdateConfirm"
     />
   </main>
 </template>

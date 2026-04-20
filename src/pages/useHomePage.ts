@@ -471,8 +471,6 @@ export function useHomePage() {
         return ["物"];
       case "skill":
         return ["技"];
-      case "incantation":
-        return ["咒"];
       case "faction":
         return ["势"];
       case "nickname":

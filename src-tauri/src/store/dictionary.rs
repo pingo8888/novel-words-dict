@@ -16,7 +16,6 @@ fn name_type_search_text(value: NameType) -> &'static str {
         NameType::Gear => "gear 装备",
         NameType::Item => "item 物品",
         NameType::Skill => "skill 技能",
-        NameType::Incantation => "incantation 咒语",
         NameType::Faction => "faction 势力",
         NameType::Nickname => "nickname 绰号",
         NameType::Creature => "creature 生物",

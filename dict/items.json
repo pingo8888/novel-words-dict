@@ -1,4 +1,8 @@
 [
 {"dictId":"build-in dict"},
-{"term":"纽伦堡蛋","group":"","nameType":"item","genderType":"both","genre":"west"}
+{"term":"龙爪","group":"","nameType":"item","genderType":"both","genre":"west"},
+{"term":"纽伦堡蛋","group":"","nameType":"item","genderType":"both","genre":"west"},
+{"term":"食人魔怪力铁手套","group":"","nameType":"gear","genderType":"both","genre":"west"},
+{"term":"水晶球","group":"","nameType":"item","genderType":"both","genre":"west"},
+{"term":"桃心木","group":"","nameType":"item","genderType":"both","genre":"west"}
 ]

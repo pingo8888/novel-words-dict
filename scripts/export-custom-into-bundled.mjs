@@ -17,6 +17,9 @@ const TARGET_CONFIG = {
   "east-male.json": {
     dictId: "east-male",
   },
+  "east-netural.json": {
+    dictId: "east-netural",
+  },
   "west-faction.json": {
     dictId: "west-faction",
   },
@@ -201,6 +204,9 @@ function detectTargetFile(entry) {
   if (nameType === "given" && genderType === "male" && genre === "east") {
     return "east-male.json";
   }
+  if (nameType === "given" && genderType === "both" && genre === "east") {
+    return "east-netural.json";
+  }
   if (nameType === "faction" && genre === "west") {
     return "west-faction.json";
   }
@@ -258,6 +264,9 @@ function toBundledEntry(entry, targetFile) {
   }
   if (targetFile === "east-male.json") {
     return { term, group, nameType: "given", genderType: "male", genre: "east" };
+  }
+  if (targetFile === "east-netural.json") {
+    return { term, group, nameType: "given", genderType: "both", genre: "east" };
   }
   if (targetFile === "west-faction.json") {
     return {

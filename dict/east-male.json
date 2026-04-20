@@ -1,8 +1,24 @@
 [
 {"dictId":"build-in dict"},
+{"term":"承志","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"春生","group":"","nameType":"given","genderType":"male","genre":"east"},
 {"term":"德来","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"福祥","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"国成","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"寒生","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"家乐","group":"","nameType":"given","genderType":"male","genre":"east"},
 {"term":"民安","group":"","nameType":"given","genderType":"male","genre":"east"},
 {"term":"天福","group":"","nameType":"given","genderType":"male","genre":"east"},
 {"term":"天阳","group":"","nameType":"given","genderType":"male","genre":"east"},
-{"term":"雨程","group":"","nameType":"given","genderType":"male","genre":"east"}
+{"term":"廷栋","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"文友","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"耀祖","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"雨程","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"玉成","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"元龙","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"云峥","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"长青","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"长卿","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"长生","group":"","nameType":"given","genderType":"male","genre":"east"},
+{"term":"志初","group":"","nameType":"given","genderType":"male","genre":"east"}
 ]

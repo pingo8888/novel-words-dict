@@ -225,6 +225,7 @@
 {"term":"秋暮之巨龙","group":"龙枪","nameType":"others","genderType":"both","genre":"west"},
 {"term":"全圣之战","group":"龙枪","nameType":"others","genderType":"both","genre":"west"},
 {"term":"人类反抗军","group":"龙枪","nameType":"faction","genderType":"both","genre":"west"},
+{"term":"荣誉即吾命","group":"龙枪","nameType":"others","genderType":"both","genre":"west"},
 {"term":"如茵","group":"龙枪","nameType":"given","genderType":"female","genre":"west"},
 {"term":"软麂皮马裤","group":"龙枪","nameType":"item","genderType":"both","genre":"west"},
 {"term":"瑞加","group":"龙枪","nameType":"given","genderType":"male","genre":"west"},

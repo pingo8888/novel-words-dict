@@ -50,6 +50,40 @@
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.24);
 }
 
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-close-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #c6d1df;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.settings-close-btn:hover {
+  border-color: #60a5fa;
+  background: #eff6ff;
+  color: #0f172a;
+}
+
+.settings-close-btn:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 0;
+}
+
 .settings-dialog h2 {
   margin: 0;
   font-size: 18px;

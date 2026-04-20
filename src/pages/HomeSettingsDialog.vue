@@ -195,7 +195,18 @@ onBeforeUnmount(() => {
       tabindex="-1"
       @keydown="onDialogKeydown"
     >
-      <h2 id="settings-dialog-title">设置</h2>
+      <div class="settings-header">
+        <h2 id="settings-dialog-title">设置</h2>
+        <button
+          type="button"
+          class="settings-close-btn"
+          aria-label="关闭设置"
+          title="关闭"
+          @click="closeDialog"
+        >
+          ×
+        </button>
+      </div>
       <p id="settings-dialog-desc" class="settings-desc">
         修改词库目录、快捷键和搜索设置，按 Esc 可关闭对话框。
       </p>

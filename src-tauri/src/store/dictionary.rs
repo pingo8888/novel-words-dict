@@ -13,12 +13,15 @@ fn name_type_search_text(value: NameType) -> &'static str {
         NameType::Surname => "surname 姓氏",
         NameType::Given => "given 名字",
         NameType::Place => "place 地名",
+        NameType::Creature => "creature 生物",
+        NameType::Monster => "monster 怪物",
         NameType::Gear => "gear 装备",
+        NameType::Food => "food 食物",
         NameType::Item => "item 物品",
         NameType::Skill => "skill 技能",
         NameType::Faction => "faction 势力",
+        NameType::Title => "title 头衔",
         NameType::Nickname => "nickname 绰号",
-        NameType::Creature => "creature 生物",
         NameType::Others => "others 其他",
     }
 }

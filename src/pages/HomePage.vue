@@ -96,10 +96,13 @@ watch(settingsVisible, (visible) => {
             <option value="given">名字</option>
             <option value="place">地名</option>
             <option value="creature">生物</option>
+            <option value="monster">怪物</option>
             <option value="gear">装备</option>
+            <option value="food">食物</option>
             <option value="item">物品</option>
             <option value="skill">技能</option>
             <option value="faction">势力</option>
+            <option value="title">头衔</option>
             <option value="nickname">绰号</option>
             <option value="others">其他</option>
           </select>

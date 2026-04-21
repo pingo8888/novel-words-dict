@@ -465,14 +465,20 @@ export function useHomePage() {
         return ["地"];
       case "creature":
         return ["生"];
+      case "monster":
+        return ["怪"];
       case "gear":
         return ["装"];
+      case "food":
+        return ["食"];
       case "item":
         return ["物"];
       case "skill":
         return ["技"];
       case "faction":
         return ["势"];
+      case "title":
+        return ["衔"];
       case "nickname":
         return ["绰"];
       case "others":

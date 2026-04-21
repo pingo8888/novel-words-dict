@@ -3,10 +3,13 @@ export type NameType =
   | "surname"
   | "given"
   | "place"
+  | "monster"
   | "gear"
+  | "food"
   | "item"
   | "skill"
   | "faction"
+  | "title"
   | "nickname"
   | "creature"
   | "others";

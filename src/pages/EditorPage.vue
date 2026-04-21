@@ -31,6 +31,11 @@ function onEditorKeydown(event: KeyboardEvent): void {
   if (event.isComposing || deleteConfirmVisible.value) {
     return;
   }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    void closeWindow();
+    return;
+  }
   if (!event.ctrlKey || event.key !== "Enter") {
     return;
   }

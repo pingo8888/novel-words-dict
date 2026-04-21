@@ -3,6 +3,7 @@ export type NameType =
   | "surname"
   | "given"
   | "place"
+  | "myth"
   | "monster"
   | "gear"
   | "food"

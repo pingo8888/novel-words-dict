@@ -8,6 +8,7 @@ pub(crate) enum NameType {
     Surname,
     Given,
     Place,
+    Myth,
     Creature,
     Monster,
     Gear,

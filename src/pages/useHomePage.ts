@@ -463,6 +463,8 @@ export function useHomePage() {
         return ["名"];
       case "place":
         return ["地"];
+      case "myth":
+        return ["神"];
       case "creature":
         return ["生"];
       case "monster":

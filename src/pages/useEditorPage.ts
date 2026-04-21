@@ -12,6 +12,7 @@ export function useEditorPage() {
   const deleteConfirmVisible = ref(false);
   const { showToast, toastMessage, toastTone } = useToast();
   const editorTitle = ref("添加词条");
+  const editorFocusNonce = ref(0);
   const editingTerm = ref("");
   const bundledExistsDictName = ref("");
   const form = reactive<NameEntry>({
@@ -176,6 +177,8 @@ export function useEditorPage() {
   }
 
   async function refreshEditorFromSeed(): Promise<void> {
+    // Focus immediately when editor opens or receives a new open request.
+    editorFocusNonce.value += 1;
     const nextSeedResult = await takeEditorSeed();
     if (!nextSeedResult.ok) {
       showToast(nextSeedResult.error, "error");
@@ -302,6 +305,7 @@ export function useEditorPage() {
     deleteEntry,
     deleting,
     editorTitle,
+    editorFocusNonce,
     editingTerm,
     form,
     isGenderTypeEditable,

@@ -10,6 +10,7 @@ const {
   deleteConfirmVisible,
   deleteEntry,
   deleting,
+  editorFocusNonce,
   editorTitle,
   editingTerm,
   form,
@@ -23,6 +24,7 @@ const {
 
 const confirmDialogRef = ref<HTMLElement | null>(null);
 const pageContentRef = ref<HTMLElement | null>(null);
+const termInputRef = ref<HTMLInputElement | null>(null);
 let restoreFocusTarget: HTMLElement | null = null;
 
 function onEditorKeydown(event: KeyboardEvent): void {
@@ -69,6 +71,17 @@ watch(deleteConfirmVisible, async (visible) => {
   }
   restoreFocusTarget = null;
 });
+
+watch(editorFocusNonce, async () => {
+  await nextTick();
+  const input = termInputRef.value;
+  if (!input) {
+    return;
+  }
+  input.focus();
+  const len = input.value.length;
+  input.setSelectionRange(len, len);
+});
 </script>
 
 <template>
@@ -80,6 +93,7 @@ watch(deleteConfirmVisible, async (visible) => {
         <label class="field full">
           <span>词条</span>
           <input
+            ref="termInputRef"
             v-model="form.term"
             type="text"
             maxlength="120"

@@ -10,11 +10,15 @@ use crate::app::{
     bootstrap::setup_app,
     commands::{
         close_editor_window, delete_entry, get_app_settings, get_bundled_entry,
-        get_bundled_entry_dict_name, get_entry, list_dictionaries, open_editor_window,
+        get_bundled_entry_dict_name, get_entry, get_last_add_preset, list_dictionaries,
+        open_editor_window,
         query_entries, save_app_settings, set_editor_seed, set_editor_window_title,
         set_hotkey_enabled, take_editor_seed, upsert_entry,
     },
-    state::{AppState, EditorSeed, HotkeyEnabled, HotkeyShutdown, HotkeyState, SettingsState},
+    state::{
+        AppState, EditorSeed, HotkeyEnabled, HotkeyShutdown, HotkeyState, LastAddPresetState,
+        SettingsState,
+    },
 };
 
 const DATA_FILE_NAME: &str = "entries.json";
@@ -45,6 +49,7 @@ pub fn run() {
         .manage(AppState::default())
         .manage(SettingsState::default())
         .manage(EditorSeed::default())
+        .manage(LastAddPresetState::default())
         .manage(HotkeyState(Mutex::new(DEFAULT_HOTKEY.to_string())))
         .manage(HotkeyEnabled::default())
         .manage(HotkeyShutdown::default())
@@ -67,6 +72,7 @@ pub fn run() {
             get_entry,
             get_bundled_entry,
             get_bundled_entry_dict_name,
+            get_last_add_preset,
             upsert_entry,
             delete_entry,
             get_app_settings,

@@ -29,6 +29,12 @@ export function useEditorPage() {
   type TakeEditorSeedResult =
     | { ok: true; seed: string | null }
     | { ok: false; error: string };
+  interface LastAddPreset {
+    genre: NameEntry["genre"];
+    group: string;
+    nameType: NameEntry["nameType"];
+    genderType: NameEntry["genderType"];
+  }
 
   async function setEditorWindowTitle(title: string): Promise<void> {
     try {
@@ -78,6 +84,21 @@ export function useEditorPage() {
     form.genderType = isGenderEditableByNameType(form.nameType) ? entry.genderType : "both";
   }
 
+  function applyLastAddPreset(preset: LastAddPreset): void {
+    form.genre = preset.genre;
+    form.group = (preset.group ?? "").trim();
+    form.nameType = preset.nameType === "both" ? "surname" : preset.nameType;
+    form.genderType = isGenderEditableByNameType(form.nameType) ? preset.genderType : "both";
+  }
+
+  async function getLastAddPreset(): Promise<LastAddPreset | null> {
+    try {
+      return await invoke<LastAddPreset | null>("get_last_add_preset");
+    } catch {
+      return null;
+    }
+  }
+
   async function refreshBundledLookup(
     term: string,
     options: { autofill: boolean; preserveTerm: boolean },
@@ -125,6 +146,10 @@ export function useEditorPage() {
     if (!normalizedTerm) {
       resetFormWithTerm("");
       bundledExistsDictName.value = "";
+      const preset = await getLastAddPreset();
+      if (preset) {
+        applyLastAddPreset(preset);
+      }
       return;
     }
 
@@ -137,7 +162,16 @@ export function useEditorPage() {
       bundledLookupSeq += 1;
     } else {
       resetFormWithTerm(normalizedTerm);
-      await refreshBundledLookup(normalizedTerm, { autofill: true, preserveTerm: false });
+      const bundledEntry = await refreshBundledLookup(normalizedTerm, {
+        autofill: true,
+        preserveTerm: false,
+      });
+      if (!bundledEntry) {
+        const preset = await getLastAddPreset();
+        if (preset) {
+          applyLastAddPreset(preset);
+        }
+      }
     }
   }
 

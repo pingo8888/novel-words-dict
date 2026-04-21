@@ -1,6 +1,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
+use crate::core::types::{GenderType, GenreType, NameType};
 use crate::infra::settings::AppSettings;
 use crate::store::EntryStore;
 
@@ -14,6 +15,17 @@ pub(crate) struct SettingsState(pub(crate) Mutex<Option<AppSettings>>);
 
 #[derive(Default)]
 pub(crate) struct EditorSeed(pub(crate) Mutex<Option<String>>);
+
+#[derive(Debug, Clone)]
+pub(crate) struct LastAddPreset {
+    pub(crate) genre: GenreType,
+    pub(crate) group: String,
+    pub(crate) name_type: NameType,
+    pub(crate) gender_type: GenderType,
+}
+
+#[derive(Default)]
+pub(crate) struct LastAddPresetState(pub(crate) Mutex<Option<LastAddPreset>>);
 
 #[derive(Default)]
 pub(crate) struct HotkeyState(pub(crate) Mutex<String>);

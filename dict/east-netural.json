@@ -1,5 +1,6 @@
 [
 {"dictId":"build-in dict"},
+{"term":"处默","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"春华","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"春来","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"冬生","group":"","nameType":"given","genderType":"both","genre":"east"},
@@ -13,6 +14,7 @@
 {"term":"立秋","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"孟希","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"南生","group":"","nameType":"given","genderType":"both","genre":"east"},
+{"term":"南星","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"尚君","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"文芳","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"文诺","group":"","nameType":"given","genderType":"both","genre":"east"},
@@ -21,5 +23,6 @@
 {"term":"晓安","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"晓晨","group":"","nameType":"given","genderType":"both","genre":"east"},
 {"term":"晓黎","group":"","nameType":"given","genderType":"both","genre":"east"},
-{"term":"亚楠","group":"","nameType":"given","genderType":"both","genre":"east"}
+{"term":"亚楠","group":"","nameType":"given","genderType":"both","genre":"east"},
+{"term":"子建","group":"","nameType":"given","genderType":"both","genre":"east"}
 ]

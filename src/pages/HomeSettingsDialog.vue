@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
+import { openPath } from "@tauri-apps/plugin-opener";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { focusFirstElement, trapTabKey } from "../utils/a11y";
 
@@ -17,7 +18,7 @@ const emit = defineEmits<{
   close: [];
   save: [];
   checkUpdate: [];
-  "update:dictDir": [value: string];
+  "open-dir-failed": [message: string];
   "update:hotkey": [value: string];
   "update:searchEngine": [value: "google" | "bing" | "baidu"];
 }>();
@@ -25,11 +26,6 @@ const emit = defineEmits<{
 const dialogRef = ref<HTMLElement | null>(null);
 let restoreFocusTarget: HTMLElement | null = null;
 let backdropPointerDown = false;
-
-const dictDirModel = computed({
-  get: () => props.dictDir,
-  set: (value: string) => emit("update:dictDir", value),
-});
 
 const hotkeyModel = computed({
   get: () => props.hotkey,
@@ -40,6 +36,25 @@ const searchEngineModel = computed({
   get: () => props.searchEngine,
   set: (value: "google" | "bing" | "baidu") => emit("update:searchEngine", value),
 });
+const dictDirDisplay = computed(() => {
+  const dictDir = props.dictDir.trim();
+  if (dictDir) {
+    return dictDir;
+  }
+  return props.projectDataDir.trim();
+});
+
+async function openDictDir(): Promise<void> {
+  const target = dictDirDisplay.value;
+  if (!target) {
+    return;
+  }
+  try {
+    await openPath(target);
+  } catch {
+    emit("open-dir-failed", "打开目录失败");
+  }
+}
 
 function closeDialog(): void {
   emit("close");
@@ -208,18 +223,28 @@ onBeforeUnmount(() => {
         </button>
       </div>
       <p id="settings-dialog-desc" class="settings-desc">
-        修改词库目录、快捷键和搜索设置，按 Esc 可关闭对话框。
+        查看词库保存目录、修改快捷键和搜索设置，按 Esc 可关闭对话框。
       </p>
-      <label class="field">
-        <span>自定词库保存目录</span>
-        <input
-          v-model="dictDirModel"
-          type="text"
-          placeholder="请输入目录路径"
-        />
-        <small>默认值：{{ projectDataDir }}</small>
-        <small>安全限制：仅允许项目数据目录及其子目录。</small>
-      </label>
+      <div class="field">
+        <span>打开自定义词库目录</span>
+        <div class="dict-dir-row">
+          <input
+            class="dict-dir-path"
+            :value="dictDirDisplay"
+            :title="dictDirDisplay"
+            type="text"
+            readonly
+          />
+          <button
+            type="button"
+            class="secondary dict-dir-open-btn"
+            :disabled="!dictDirDisplay"
+            @click="openDictDir"
+          >
+            打开
+          </button>
+        </div>
+      </div>
 
       <label class="field">
         <span>界面取词快捷键</span>

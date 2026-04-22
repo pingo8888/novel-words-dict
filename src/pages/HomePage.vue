@@ -21,6 +21,7 @@ const {
   loading,
   isGenderFilterEditable,
   nextPage,
+  notifyOpenDirFailed,
   openEditor,
   openSettings,
   pageDisplay,
@@ -241,9 +242,9 @@ watch(settingsVisible, (visible) => {
       :hotkey="settingsForm.hotkey"
       :search-engine="settingsForm.searchEngine"
       :update-checking="updateChecking"
-      @update:dict-dir="settingsForm.dictDir = $event"
       @update:hotkey="settingsForm.hotkey = $event"
       @update:search-engine="settingsForm.searchEngine = $event"
+      @open-dir-failed="notifyOpenDirFailed"
       @check-update="checkForUpdates(true)"
       @close="closeSettings"
       @save="saveSettings"

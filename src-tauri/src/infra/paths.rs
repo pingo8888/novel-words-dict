@@ -40,20 +40,6 @@ pub(crate) fn resolve_custom_db_path(project_data_dir: &Path) -> PathBuf {
     project_data_dir.join(CUSTOM_DB_FILE_NAME)
 }
 
-pub(crate) fn normalize_dict_dir(input: &str, project_data_dir: &Path) -> PathBuf {
-    let trimmed = input.trim();
-    if trimmed.is_empty() {
-        project_data_dir.to_path_buf()
-    } else {
-        let candidate = PathBuf::from(trimmed);
-        if candidate.is_absolute() {
-            candidate
-        } else {
-            project_data_dir.join(candidate)
-        }
-    }
-}
-
 pub(crate) fn sanitize_windows_verbatim_prefix(raw: &str) -> String {
     #[cfg(target_os = "windows")]
     {
@@ -94,70 +80,6 @@ fn normalize_lexically(path: &Path) -> PathBuf {
     normalized
 }
 
-fn is_path_within(base: &Path, target: &Path) -> bool {
-    let normalized_base = normalize_path_for_compare(base);
-    let normalized_target = normalize_path_for_compare(target);
-
-    #[cfg(target_os = "windows")]
-    {
-        let base = normalized_base
-            .to_string_lossy()
-            .replace('/', "\\")
-            .trim_end_matches('\\')
-            .to_ascii_lowercase();
-        let target = normalized_target
-            .to_string_lossy()
-            .replace('/', "\\")
-            .to_ascii_lowercase();
-        target == base || target.starts_with(format!("{base}\\").as_str())
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        let base = normalized_base
-            .to_string_lossy()
-            .trim_end_matches('/')
-            .to_string();
-        let target = normalized_target.to_string_lossy().to_string();
-        target == base || target.starts_with(format!("{base}/").as_str())
-    }
-}
-
-pub(crate) fn validate_dict_dir_path(
-    path: &Path,
-    project_data_dir: &Path,
-) -> Result<PathBuf, String> {
-    let canonical = normalize_path_for_compare(path);
-    if canonical.parent().is_none() {
-        return Err("词库目录不能为文件系统根目录".to_string());
-    }
-
-    let allowed_base = normalize_path_for_compare(project_data_dir);
-    if !is_path_within(&allowed_base, &canonical) {
-        return Err(format!(
-            "词库目录必须位于项目数据目录内（{}）",
-            sanitize_windows_verbatim_prefix(allowed_base.to_string_lossy().as_ref())
-        ));
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        for key in ["WINDIR", "ProgramFiles", "ProgramFiles(x86)"] {
-            let Ok(raw_base) = env::var(key) else {
-                continue;
-            };
-            let base = normalize_path_for_compare(Path::new(raw_base.as_str()));
-            if is_path_within(&base, &canonical) {
-                return Err(format!(
-                    "词库目录不能位于系统目录下（{}）",
-                    sanitize_windows_verbatim_prefix(base.to_string_lossy().as_ref())
-                ));
-            }
-        }
-    }
-
-    Ok(canonical)
-}
 
 pub(crate) fn resolve_bundled_dict_dir_candidates<R: tauri::Runtime>(
     app: &AppHandle<R>,

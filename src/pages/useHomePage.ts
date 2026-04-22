@@ -273,6 +273,10 @@ export function useHomePage() {
     }
   }
 
+  function notifyOpenDirFailed(message: string): void {
+    showToast(message || "打开目录失败", "error");
+  }
+
   async function copyTerm(term: string): Promise<void> {
     const text = term.trim();
     if (!text) {
@@ -609,6 +613,7 @@ export function useHomePage() {
     handleResultWheel,
     loading,
     nextPage,
+    notifyOpenDirFailed,
     openEditor,
     openSettings,
     pageDisplay,

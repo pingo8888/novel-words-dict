@@ -13,6 +13,23 @@
     "core:window:allow-set-always-on-top",
     "core:window:allow-start-dragging",
     "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPLOCALDATA/**"
+        },
+        {
+          "path": "$LOCALDATA/**"
+        },
+        {
+          "path": "$HOME/**"
+        }
+      ]
+    },
     "updater:default",
     "process:allow-restart"
   ]

@@ -29,7 +29,6 @@ pub(crate) struct AppSettings {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct AppSettingsPatch {
-    dict_dir: Option<String>,
     hotkey: Option<String>,
     search_engine: Option<String>,
 }
@@ -80,13 +79,7 @@ pub(crate) fn default_settings(project_data_dir: &Path) -> AppSettings {
 fn parse_settings_text(text: &str, project_data_dir: &Path) -> Result<AppSettings, String> {
     let patch: AppSettingsPatch =
         serde_json::from_str(text).map_err(|err| format!("解析设置失败: {err}"))?;
-    let dict_dir = patch
-        .dict_dir
-        .filter(|value| !value.trim().is_empty())
-        .map(|value| sanitize_windows_verbatim_prefix(value.as_str()))
-        .unwrap_or_else(|| {
-            sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref())
-        });
+    let dict_dir = sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref());
     let hotkey = normalize_hotkey(patch.hotkey.as_deref().unwrap_or(DEFAULT_HOTKEY));
     let search_engine = normalize_search_engine(
         patch

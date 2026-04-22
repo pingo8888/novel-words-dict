@@ -63,7 +63,6 @@ export function useHomeSettings(options: UseHomeSettingsOptions) {
     try {
       const saved = await invoke<AppSettingsResponse>("save_app_settings", {
         request: {
-          dictDir: settingsForm.dictDir.trim(),
           hotkey: settingsForm.hotkey.trim(),
           searchEngine: settingsForm.searchEngine,
         },

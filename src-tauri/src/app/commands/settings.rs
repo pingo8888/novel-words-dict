@@ -1,13 +1,11 @@
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::Path;
 use tauri::Emitter;
 use tauri::{AppHandle, State};
 
 use crate::app::state::{HotkeyEnabled, HotkeyState, SettingsState};
 use crate::infra::paths::{
-    normalize_dict_dir, resolve_project_data_dir, sanitize_windows_verbatim_prefix,
-    validate_dict_dir_path,
+    resolve_project_data_dir, sanitize_windows_verbatim_prefix,
 };
 use crate::infra::settings::{
     default_settings, normalize_hotkey, normalize_search_engine, persist_app_settings, AppSettings,
@@ -16,7 +14,6 @@ use crate::infra::settings::{
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SaveSettingsRequest {
-    dict_dir: String,
     hotkey: String,
     search_engine: Option<String>,
 }
@@ -67,12 +64,11 @@ pub(crate) fn save_app_settings(
     let normalized_hotkey = normalize_hotkey(&request.hotkey);
     let normalized_search_engine =
         normalize_search_engine(request.search_engine.as_deref().unwrap_or("google"));
-    let dict_dir_path = normalize_dict_dir(&request.dict_dir, &project_data_dir);
-    let dict_dir_path = validate_dict_dir_path(&dict_dir_path, &project_data_dir)?;
-    fs::create_dir_all(&dict_dir_path).map_err(|err| format!("创建词库目录失败: {err}"))?;
+    let fixed_dict_dir =
+        sanitize_windows_verbatim_prefix(project_data_dir.to_string_lossy().as_ref());
 
     let normalized_settings = AppSettings {
-        dict_dir: sanitize_windows_verbatim_prefix(dict_dir_path.to_string_lossy().as_ref()),
+        dict_dir: fixed_dict_dir,
         hotkey: normalized_hotkey.clone(),
         search_engine: normalized_search_engine,
     };

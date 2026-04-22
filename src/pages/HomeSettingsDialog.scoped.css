@@ -34,6 +34,65 @@
   border-color: #1f2937;
 }
 
+.dict-dir-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dict-dir-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 36px;
+  border: 1px solid #202020;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+  line-height: 34px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fffefb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.dict-dir-path[readonly] {
+  cursor: text;
+}
+
+.dict-dir-open-btn {
+  flex: 0 0 auto;
+  height: 36px;
+  min-width: 68px;
+  border: 2px solid #1f1f1f;
+  border-radius: 2px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fffefb;
+  color: #111827;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #1c1c1c;
+}
+
+.dict-dir-open-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.dict-dir-open-btn:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.dict-dir-open-btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #1c1c1c;
+}
+
 .settings-mask {
   position: absolute;
   inset: 0;

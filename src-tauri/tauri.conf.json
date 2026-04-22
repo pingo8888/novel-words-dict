@@ -15,7 +15,8 @@
         "title": "小说词库",
         "width": 1320,
         "height": 1140,
-        "resizable": false
+        "resizable": false,
+        "maximizable": false
       }
     ],
     "security": {

@@ -29,6 +29,10 @@ window.addEventListener("unhandledrejection", (event) => {
 });
 
 try {
+  document.documentElement.classList.add("editor-window");
+  document.body.classList.add("editor-window");
+  document.documentElement.style.background = "transparent";
+  document.body.style.background = "transparent";
   createApp(EditorPage).mount("#app");
 } catch (error) {
   const reason = error instanceof Error ? error.stack || error.message : String(error);

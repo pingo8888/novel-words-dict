@@ -92,7 +92,18 @@ watch(editorFocusNonce, async () => {
 <template>
   <main class="editor-page" @keydown.capture="onEditorKeydown">
     <div ref="pageContentRef" class="editor-content">
-      <h1>{{ editorTitle }}</h1>
+      <div class="editor-header" data-tauri-drag-region>
+        <h1 data-tauri-drag-region>{{ editorTitle }}</h1>
+        <button
+          type="button"
+          class="editor-close-btn"
+          aria-label="关闭编辑窗口"
+          title="关闭"
+          @click="closeWindow"
+        >
+          ×
+        </button>
+      </div>
 
       <div class="form-grid">
         <label class="field full">

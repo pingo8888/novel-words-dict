@@ -10,7 +10,15 @@
   --accent: #305f96;
   --accent-strong: #244978;
   --danger: #8f2930;
-  font-family: "Noto Serif SC", "STZhongsong", "Georgia", serif;
+  font-family:
+    "Source Han Sans SC",
+    "Noto Sans SC",
+    "Noto Sans CJK SC",
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei UI",
+    "Microsoft YaHei",
+    sans-serif;
   font-size: 15px;
   line-height: 1.5;
   font-weight: 400;
@@ -37,6 +45,12 @@ body {
   color: var(--ink-main);
   background: radial-gradient(circle at 80% 0%, rgba(85, 131, 189, 0.24), transparent 45%),
     linear-gradient(140deg, var(--bg-start), var(--bg-end));
+}
+
+html.editor-window,
+body.editor-window,
+body.editor-window #app {
+  background: transparent !important;
 }
 
 button,

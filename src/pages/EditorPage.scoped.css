@@ -2,25 +2,75 @@
   box-sizing: border-box;
   height: 100vh;
   position: relative;
-  padding: 20px;
+  padding: 0;
   background: transparent;
   color: var(--ink-main);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0;
+  overflow: hidden;
 }
 
 .editor-content {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  background: #f7f4ed;
+  border: 2px solid #1f1f1f;
+  border-radius: 0;
+  padding: 14px;
+  box-shadow: 4px 4px 0 #1f1f1f;
+  width: calc(100% - 4px);
+  height: calc(100% - 4px);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
 }
 
-h1 {
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  user-select: none;
+}
+
+.editor-header h1 {
   margin: 0;
   font-size: 22px;
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: 600;
+  color: #111827;
+}
+
+.editor-close-btn {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #1f1f1f;
+  border-radius: 2px;
+  background: #fffefb;
+  color: #1f2937;
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 2px 2px 0 #1c1c1c;
+}
+
+.editor-close-btn:hover {
+  background: #f8f4e8;
+}
+
+.editor-close-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #1c1c1c;
+}
+
+.editor-close-btn:focus-visible {
+  outline: 2px solid #1f2937;
+  outline-offset: 0;
 }
 
 .form-grid {
@@ -38,24 +88,28 @@ h1 {
   flex-direction: column;
   gap: 6px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.field span {
+  user-select: none;
 }
 
 .field input,
 .field select {
-  border: 1px solid #c6d1df;
-  border-radius: 8px;
+  border: 1px solid #202020;
+  border-radius: 4px;
   padding: 8px 10px;
   font-size: 14px;
   color: #111827;
-  background: #ffffff;
+  background: #fffefb;
 }
 
 .field input:focus,
 .field select:focus {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid #1f2937;
   outline-offset: 0;
-  border-color: #60a5fa;
+  border-color: #1f2937;
 }
 
 .actions {
@@ -75,7 +129,7 @@ h1 {
 
 .bundled-exists-tip {
   margin: 0;
-  color: #b91c1c;
+  color: #8e1f1f;
   font-size: 15px;
   font-weight: 600;
   white-space: nowrap;
@@ -86,38 +140,49 @@ h1 {
 
 .actions button {
   min-width: 92px;
-  border: 0;
-  border-radius: 8px;
+  border: 2px solid #1f1f1f;
+  border-radius: 2px;
   padding: 9px 16px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 2px 2px 0 #1c1c1c;
 }
 
 .actions button:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.65;
+  box-shadow: none;
 }
 
 .actions .secondary {
   color: #1f2937;
-  background: #e5e7eb;
+  background: #fffefb;
 }
 
 .actions .primary {
   color: #ffffff;
-  background: #2563eb;
+  background: #0f7a47;
 }
 
 .actions .danger {
   color: #ffffff;
-  background: #dc2626;
+  background: #b63838;
+}
+
+.actions button:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.actions button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #1c1c1c;
 }
 
 .confirm-mask {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.36);
+  background: rgba(30, 30, 30, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -126,23 +191,23 @@ h1 {
 
 .confirm-dialog {
   width: min(380px, calc(100% - 32px));
-  border: 1px solid #d6deeb;
-  border-radius: 10px;
-  background: #ffffff;
-  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.25);
+  border: 2px solid #1f1f1f;
+  border-radius: 2px;
+  background: #f7f4ed;
+  box-shadow: 4px 4px 0 #1f1f1f;
   padding: 14px;
 }
 
 .confirm-dialog h2 {
   margin: 0;
   font-size: 16px;
-  color: #0f172a;
+  color: #111827;
 }
 
 .confirm-dialog p {
   margin: 10px 0 0;
   font-size: 13px;
-  color: #334155;
+  color: #374151;
 }
 
 .confirm-actions {
@@ -154,27 +219,38 @@ h1 {
 
 .confirm-actions button {
   min-width: 92px;
-  border: 0;
-  border-radius: 8px;
+  border: 2px solid #1f1f1f;
+  border-radius: 2px;
   padding: 9px 16px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 2px 2px 0 #1c1c1c;
 }
 
 .confirm-actions button:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.65;
+  box-shadow: none;
 }
 
 .confirm-actions .secondary {
   color: #1f2937;
-  background: #e5e7eb;
+  background: #fffefb;
 }
 
 .confirm-actions .danger {
   color: #ffffff;
-  background: #dc2626;
+  background: #b63838;
+}
+
+.confirm-actions button:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.confirm-actions button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #1c1c1c;
 }
 
 .system-tip {
@@ -183,24 +259,26 @@ h1 {
   right: 14px;
   margin: 0;
   padding: 6px 14px;
-  border-radius: 4px;
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #1e40af;
+  border-radius: 2px;
+  border: 2px solid #1f1f1f;
+  background: #fffefb;
+  color: #1f2937;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   pointer-events: none;
   z-index: 30;
+  box-shadow: 2px 2px 0 #1c1c1c;
+  user-select: none;
 }
 
 .system-tip.tone-info {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #1e40af;
+  border-color: #1f1f1f;
+  background: #fffefb;
+  color: #1f2937;
 }
 
 .system-tip.tone-error {
-  border-color: #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
+  border-color: #1f1f1f;
+  background: #b63838;
+  color: #ffffff;
 }

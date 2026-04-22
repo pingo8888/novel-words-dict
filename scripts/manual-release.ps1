@@ -32,10 +32,17 @@ if (-not $env:TAURI_SIGNING_PRIVATE_KEY) {
   }
 }
 
-Write-Host "==> 1/3 前端构建"
+Write-Host "==> 1/4 构建内置词库数据库"
+npm run dict:build-db
+
+if (-not (Test-Path -LiteralPath "build-in.db")) {
+  Write-Error "未找到内置词库数据库：build-in.db"
+}
+
+Write-Host "==> 2/4 前端构建"
 npm run build
 
-Write-Host "==> 2/3 Tauri 打包（跳过重复 beforeBuildCommand）"
+Write-Host "==> 3/4 Tauri 打包（跳过重复 beforeBuildCommand）"
 npm run tauri build -- --config '{"build":{"beforeBuildCommand":""}}'
 
 $bundleDir = Join-Path "src-tauri\target\release\bundle" "nsis"
@@ -116,7 +123,7 @@ if (Test-Path -LiteralPath $rootLatestJson) {
   Remove-Item -LiteralPath $rootLatestJson -Force
 }
 
-Write-Host "==> 3/3 产物检查通过"
+Write-Host "==> 4/4 产物检查通过"
 Write-Host "Artifact dir: $artifactDir"
 Write-Host "Installer : $stagedInstaller"
 Write-Host "Signature : $stagedSigPath"

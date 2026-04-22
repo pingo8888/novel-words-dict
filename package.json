@@ -10,10 +10,11 @@
     "tauri": "tauri",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "clean:custom-duplicates": "node scripts/clean-custom-bundled-duplicates.mjs",
-    "dict:export-custom": "node scripts/export-custom-into-bundled.mjs",
-    "dict:move-group": "node scripts/move-custom-group-to-bundled.mjs",
-    "dict:normalize": "node scripts/normalize-bundled-dicts.mjs",
+    "dict:clean-custom-duplicates": "node scripts/clean-custom-bundled-duplicates.mjs",
+    "dict:export-custom-all-to-json": "node scripts/export-custom-into-bundled.mjs",
+    "dict:export-custom-group-to-json": "node scripts/move-custom-group-to-bundled.mjs",
+    "dict:normalize-buildin-json": "node scripts/normalize-bundled-dicts.mjs",
+    "dict:build-db": "node scripts/build-builtin-db.mjs",
     "version:bump": "node scripts/bump-version.mjs"
   },
   "dependencies": {

@@ -11,9 +11,8 @@ use crate::app::{
     commands::{
         close_editor_window, delete_entry, get_app_settings, get_bundled_entry,
         get_bundled_entry_dict_name, get_entry, get_last_add_preset, list_dictionaries,
-        open_editor_window,
-        query_entries, save_app_settings, set_editor_seed, set_editor_window_title,
-        set_hotkey_enabled, take_editor_seed, upsert_entry,
+        open_editor_window, query_entries, save_app_settings, set_editor_seed,
+        set_editor_window_title, set_hotkey_enabled, take_editor_seed, upsert_entry,
     },
     state::{
         AppState, EditorSeed, HotkeyEnabled, HotkeyShutdown, HotkeyState, LastAddPresetState,
@@ -23,6 +22,8 @@ use crate::app::{
 
 const DATA_FILE_NAME: &str = "entries.json";
 const LEGACY_DATA_FILE_NAME: &str = "entries.ndjson";
+const CUSTOM_DB_FILE_NAME: &str = "custom.db";
+const BUILTIN_DB_FILE_NAME: &str = "build-in.db";
 const SETTINGS_FILE_NAME: &str = "settings.json";
 const DEFAULT_HOTKEY: &str = "Alt+D";
 const BUNDLED_DICT_DIR_NAME: &str = "dict";
@@ -63,7 +64,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             #[cfg(desktop)]
-            app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+            app.handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())?;
             setup_app(app)
         })
         .invoke_handler(tauri::generate_handler![

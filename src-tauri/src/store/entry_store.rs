@@ -1,20 +1,22 @@
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
+use rusqlite::{params, Connection};
 use tauri::AppHandle;
 
 use crate::core::filter::{
     matches_gender_type_filter, matches_genre_filter, matches_name_type_filter,
 };
 use crate::core::text::make_term_key;
-use crate::core::types::{DictionaryMeta, DictionaryOption, NameEntry};
+use crate::core::types::{DictionaryOption, GenderType, GenreType, NameEntry, NameType};
 use crate::infra::files::{
     collect_json_files, is_bundled_dict_order_file, is_custom_entries_file,
     load_bundled_dict_configs, load_entries_from_json_file, load_entries_from_ndjson_file,
-    replace_file_from_temp, sanitize_dict_id,
+    sanitize_dict_id,
 };
-use crate::infra::paths::resolve_bundled_dict_dir_candidates;
+use crate::infra::paths::{resolve_bundled_db_path, resolve_bundled_dict_dir_candidates};
 use crate::{
     ALL_DICT_ID, ALL_DICT_NAME, BUNDLED_DICT_ORDER_FILE_NAME, CUSTOM_DICT_ID, CUSTOM_DICT_NAME,
     LEGACY_DATA_FILE_NAME, PAGE_SIZE,
@@ -22,6 +24,18 @@ use crate::{
 
 use super::dictionary::DictionaryData;
 use super::query::{QueryRequest, QueryResponse};
+
+const CUSTOM_DB_SCHEMA: &str = r#"
+CREATE TABLE IF NOT EXISTS custom_entries (
+    term_key TEXT PRIMARY KEY,
+    term TEXT NOT NULL,
+    group_name TEXT NOT NULL DEFAULT '',
+    name_type TEXT NOT NULL,
+    gender_type TEXT NOT NULL,
+    genre TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_custom_entries_term ON custom_entries(term);
+"#;
 
 fn compare_query_items(
     a: &super::query::QueryItem,
@@ -41,11 +55,82 @@ fn compare_query_item_refs(
     compare_query_items(a, b)
 }
 
+fn name_type_to_str(value: NameType) -> &'static str {
+    match value {
+        NameType::Both => "both",
+        NameType::Surname => "surname",
+        NameType::Given => "given",
+        NameType::Place => "place",
+        NameType::Myth => "myth",
+        NameType::Creature => "creature",
+        NameType::Monster => "monster",
+        NameType::Gear => "gear",
+        NameType::Food => "food",
+        NameType::Item => "item",
+        NameType::Skill => "skill",
+        NameType::Faction => "faction",
+        NameType::Title => "title",
+        NameType::Nickname => "nickname",
+        NameType::Others => "others",
+    }
+}
+
+fn parse_name_type(value: &str) -> NameType {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "surname" => NameType::Surname,
+        "given" => NameType::Given,
+        "place" => NameType::Place,
+        "myth" => NameType::Myth,
+        "creature" => NameType::Creature,
+        "monster" => NameType::Monster,
+        "gear" => NameType::Gear,
+        "food" => NameType::Food,
+        "item" | "items" => NameType::Item,
+        "skill" => NameType::Skill,
+        "faction" => NameType::Faction,
+        "title" => NameType::Title,
+        "nickname" => NameType::Nickname,
+        "others" | "other" | "incantation" => NameType::Others,
+        _ => NameType::Both,
+    }
+}
+
+fn gender_type_to_str(value: GenderType) -> &'static str {
+    match value {
+        GenderType::Male => "male",
+        GenderType::Female => "female",
+        GenderType::Both => "both",
+    }
+}
+
+fn parse_gender_type(value: &str) -> GenderType {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "male" => GenderType::Male,
+        "female" => GenderType::Female,
+        _ => GenderType::Both,
+    }
+}
+
+fn genre_type_to_str(value: GenreType) -> &'static str {
+    match value {
+        GenreType::East => "east",
+        GenreType::West => "west",
+    }
+}
+
+fn parse_genre_type(value: &str) -> GenreType {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "east" => GenreType::East,
+        _ => GenreType::West,
+    }
+}
+
 #[derive(Default)]
 pub(crate) struct EntryStore {
     pub(crate) custom: DictionaryData,
     pub(crate) bundled: Vec<DictionaryData>,
-    pub(crate) custom_data_path: Option<PathBuf>,
+    pub(crate) custom_db_path: Option<PathBuf>,
+    pub(crate) custom_conn: Option<Connection>,
     pub(crate) total_all_cache: usize,
     pub(crate) custom_term_keys: HashSet<String>,
 }
@@ -54,83 +139,24 @@ impl EntryStore {
     pub(crate) fn load<R: tauri::Runtime>(
         &mut self,
         app: &AppHandle<R>,
-        path: PathBuf,
+        custom_db_path: PathBuf,
+        legacy_entries_path: PathBuf,
     ) -> Result<(), String> {
-        let data_dir = path
-            .parent()
-            .ok_or_else(|| "数据目录路径无效".to_string())?
-            .to_path_buf();
-        fs::create_dir_all(&data_dir).map_err(|err| format!("创建数据目录失败: {err}"))?;
-
-        let mut latest: HashMap<String, NameEntry> = HashMap::new();
-        let mut loaded_json = false;
-
-        let mut json_files = collect_json_files(&data_dir)?;
-        json_files.sort();
-        json_files.retain(|candidate| candidate != &path);
-        json_files.push(path.clone());
-
-        for file_path in json_files {
-            if !file_path.exists() {
-                continue;
-            }
-            match load_entries_from_json_file(&file_path) {
-                Ok(loaded) => {
-                    loaded_json = true;
-                    for mut entry in loaded.entries {
-                        entry.term = entry.term.trim().to_string();
-                        if entry.term.is_empty() {
-                            continue;
-                        }
-                        // Later file overrides same term from earlier file.
-                        // File order is deterministic by sorted path, then custom entries file last.
-                        latest.insert(make_term_key(&entry.term), entry);
-                    }
-                }
-                Err(err) => {
-                    eprintln!("忽略无效 JSON 文件 {}: {err}", file_path.display());
-                }
-            }
-        }
-
-        if !loaded_json {
-            let legacy_path = data_dir
-                .parent()
-                .map(|dir| dir.join(LEGACY_DATA_FILE_NAME))
-                .unwrap_or_else(|| data_dir.join(LEGACY_DATA_FILE_NAME));
-            if legacy_path.exists() {
-                match load_entries_from_ndjson_file(&legacy_path) {
-                    Ok(entries) => {
-                        for mut entry in entries {
-                            entry.term = entry.term.trim().to_string();
-                            if entry.term.is_empty() {
-                                continue;
-                            }
-                            // Legacy file is loaded only when no JSON file was parsed.
-                            latest.insert(make_term_key(&entry.term), entry);
-                        }
-                    }
-                    Err(err) => {
-                        eprintln!("读取旧数据文件失败 {}: {err}", legacy_path.display());
-                    }
-                }
-            }
-        }
+        let mut custom_conn = Self::open_custom_db(custom_db_path.as_path())?;
+        let custom_entries =
+            self.load_custom_entries_with_migration(&mut custom_conn, legacy_entries_path.as_path())?;
 
         self.custom = DictionaryData::new(
             CUSTOM_DICT_ID.to_string(),
             CUSTOM_DICT_NAME.to_string(),
             true,
-            latest.into_values().collect(),
+            custom_entries,
         );
         self.bundled = self.load_bundled_dictionaries(app);
-        self.custom_data_path = Some(path.clone());
+        self.custom_db_path = Some(custom_db_path);
+        self.custom_conn = Some(custom_conn);
         self.refresh_custom_term_keys();
         self.total_all_cache = self.compute_total_entries_merged_all();
-
-        if !path.exists() {
-            self.persist()?;
-        }
         Ok(())
     }
 
@@ -205,8 +231,6 @@ impl EntryStore {
             }
             for dict in &self.bundled {
                 for entry in &dict.query_items {
-                    // Custom entries still override bundled ones.
-                    // Duplicates among bundled dicts are intentionally preserved.
                     if self.custom_term_keys.contains(&entry.term_key) {
                         continue;
                     }
@@ -315,17 +339,21 @@ impl EntryStore {
         }
 
         let key = make_term_key(&entry.term);
-        if let Some(previous_term) = original_term {
-            let previous_key = make_term_key(previous_term);
-            if !previous_key.is_empty() && previous_key != key {
-                if let Some(previous_idx) = self
-                    .custom
-                    .entries
-                    .iter()
-                    .position(|item| make_term_key(&item.term) == previous_key)
-                {
-                    self.custom.entries.remove(previous_idx);
-                }
+        if key.is_empty() {
+            return Err("词条不能为空".to_string());
+        }
+
+        let previous_key = original_term.map(make_term_key).unwrap_or_default();
+        self.persist_upsert_to_custom_db(&entry, previous_key.as_str(), key.as_str())?;
+
+        if !previous_key.is_empty() && previous_key != key {
+            if let Some(previous_idx) = self
+                .custom
+                .entries
+                .iter()
+                .position(|item| make_term_key(&item.term) == previous_key)
+            {
+                self.custom.entries.remove(previous_idx);
             }
         }
 
@@ -343,7 +371,7 @@ impl EntryStore {
         self.custom.rebuild_derived();
         self.refresh_custom_term_keys();
         self.total_all_cache = self.compute_total_entries_merged_all();
-        self.persist()
+        Ok(())
     }
 
     pub(crate) fn delete(&mut self, term: &str) -> Result<(), String> {
@@ -352,40 +380,12 @@ impl EntryStore {
             return Err("词条不存在".to_string());
         };
 
+        self.persist_delete_from_custom_db(key.as_str())?;
+
         self.custom.entries.remove(existing_idx);
         self.custom.rebuild_derived();
         self.refresh_custom_term_keys();
         self.total_all_cache = self.compute_total_entries_merged_all();
-        self.persist()
-    }
-
-    fn persist(&self) -> Result<(), String> {
-        let path = self
-            .custom_data_path
-            .as_ref()
-            .ok_or_else(|| "数据文件路径未初始化".to_string())?;
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).map_err(|err| format!("创建数据目录失败: {err}"))?;
-        }
-        let mut lines = Vec::with_capacity(self.custom.entries.len() + 1);
-        let header = DictionaryMeta {
-            dict_id: CUSTOM_DICT_ID.to_string(),
-            dict_name: CUSTOM_DICT_NAME.to_string(),
-            order: None,
-        };
-        lines.push(
-            serde_json::to_string(&header).map_err(|err| format!("序列化词库元数据失败: {err}"))?,
-        );
-        for entry in &self.custom.entries {
-            let line =
-                serde_json::to_string(entry).map_err(|err| format!("序列化词条失败: {err}"))?;
-            lines.push(line);
-        }
-        let out = format!("[\n{}\n]", lines.join(",\n"));
-
-        let temp_path = path.with_extension("json.tmp");
-        fs::write(&temp_path, out).map_err(|err| format!("写入临时文件失败: {err}"))?;
-        replace_file_from_temp(&temp_path, path)?;
         Ok(())
     }
 
@@ -412,8 +412,6 @@ impl EntryStore {
     }
 
     fn compute_total_entries_merged_all(&self) -> usize {
-        // Keep custom entries as-is, and only skip bundled entries that
-        // conflict with custom terms. Duplicates inside bundled dicts are kept.
         let mut total = self.custom.entries.len();
 
         for dict in &self.bundled {
@@ -444,10 +442,317 @@ impl EntryStore {
             .extend(self.custom.index.keys().cloned());
     }
 
+    fn custom_conn_mut(&mut self) -> Result<&mut Connection, String> {
+        self.custom_conn
+            .as_mut()
+            .ok_or_else(|| "自定义词库数据库连接未初始化".to_string())
+    }
+
+    fn open_custom_db(path: &Path) -> Result<Connection, String> {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).map_err(|err| format!("创建数据目录失败: {err}"))?;
+        }
+        let conn = Connection::open(path)
+            .map_err(|err| format!("打开自定义词库数据库失败 {}: {err}", path.display()))?;
+        conn.execute_batch(CUSTOM_DB_SCHEMA)
+            .map_err(|err| format!("初始化自定义词库数据库失败 {}: {err}", path.display()))?;
+        conn.execute_batch("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")
+            .map_err(|err| format!("设置自定义词库数据库 PRAGMA 失败 {}: {err}", path.display()))?;
+        Ok(conn)
+    }
+
+    fn load_custom_entries_with_migration(
+        &self,
+        conn: &mut Connection,
+        legacy_entries_path: &Path,
+    ) -> Result<Vec<NameEntry>, String> {
+        let count: i64 = conn
+            .query_row("SELECT COUNT(1) FROM custom_entries", [], |row| row.get(0))
+            .map_err(|err| format!("读取自定义词库数量失败: {err}"))?;
+
+        if count == 0 {
+            let migrated = self.migrate_legacy_entries_into_db(conn, legacy_entries_path)?;
+            if migrated {
+                if let Err(err) = self.backup_legacy_sources(legacy_entries_path) {
+                    eprintln!("备份旧词库文件失败: {err}");
+                }
+            }
+        }
+
+        self.read_custom_entries_from_db(conn)
+    }
+
+    fn read_custom_entries_from_db(&self, conn: &Connection) -> Result<Vec<NameEntry>, String> {
+        let mut stmt = conn
+            .prepare(
+                "SELECT term, group_name, name_type, gender_type, genre
+                 FROM custom_entries
+                 ORDER BY term COLLATE NOCASE ASC",
+            )
+            .map_err(|err| format!("读取自定义词条失败: {err}"))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(NameEntry {
+                    term: row.get::<_, String>(0)?,
+                    group: row.get::<_, String>(1)?,
+                    name_type: parse_name_type(&row.get::<_, String>(2)?),
+                    gender_type: parse_gender_type(&row.get::<_, String>(3)?),
+                    genre: parse_genre_type(&row.get::<_, String>(4)?),
+                })
+            })
+            .map_err(|err| format!("读取自定义词条失败: {err}"))?;
+
+        let mut entries = Vec::new();
+        for row in rows {
+            entries.push(row.map_err(|err| format!("读取自定义词条失败: {err}"))?);
+        }
+        Ok(entries)
+    }
+
+    fn persist_upsert_to_custom_db(
+        &mut self,
+        entry: &NameEntry,
+        previous_key: &str,
+        key: &str,
+    ) -> Result<(), String> {
+        let conn = self.custom_conn_mut()?;
+        let tx = conn
+            .transaction()
+            .map_err(|err| format!("开启数据库事务失败: {err}"))?;
+
+        if !previous_key.is_empty() && previous_key != key {
+            tx.execute(
+                "DELETE FROM custom_entries WHERE term_key = ?1",
+                params![previous_key],
+            )
+            .map_err(|err| format!("删除旧词条失败: {err}"))?;
+        }
+
+        tx.execute(
+            "INSERT INTO custom_entries (term_key, term, group_name, name_type, gender_type, genre)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+             ON CONFLICT(term_key) DO UPDATE SET
+                term = excluded.term,
+                group_name = excluded.group_name,
+                name_type = excluded.name_type,
+                gender_type = excluded.gender_type,
+                genre = excluded.genre",
+            params![
+                key,
+                entry.term,
+                entry.group,
+                name_type_to_str(entry.name_type),
+                gender_type_to_str(entry.gender_type),
+                genre_type_to_str(entry.genre)
+            ],
+        )
+        .map_err(|err| format!("保存词条失败: {err}"))?;
+
+        tx.commit()
+            .map_err(|err| format!("提交数据库事务失败: {err}"))
+    }
+
+    fn persist_delete_from_custom_db(&mut self, key: &str) -> Result<(), String> {
+        let conn = self.custom_conn_mut()?;
+        let affected = conn
+            .execute(
+                "DELETE FROM custom_entries WHERE term_key = ?1",
+                params![key],
+            )
+            .map_err(|err| format!("删除词条失败: {err}"))?;
+        if affected == 0 {
+            return Err("词条不存在".to_string());
+        }
+        Ok(())
+    }
+
+    fn migrate_legacy_entries_into_db(
+        &self,
+        conn: &mut Connection,
+        legacy_entries_path: &Path,
+    ) -> Result<bool, String> {
+        let entries = self.load_legacy_entries_for_migration(legacy_entries_path)?;
+        if entries.is_empty() {
+            return Ok(false);
+        }
+
+        let tx = conn
+            .transaction()
+            .map_err(|err| format!("开启迁移事务失败: {err}"))?;
+        {
+            let mut stmt = tx
+                .prepare(
+                    "INSERT INTO custom_entries (term_key, term, group_name, name_type, gender_type, genre)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                     ON CONFLICT(term_key) DO UPDATE SET
+                        term = excluded.term,
+                        group_name = excluded.group_name,
+                        name_type = excluded.name_type,
+                        gender_type = excluded.gender_type,
+                        genre = excluded.genre",
+                )
+                .map_err(|err| format!("准备迁移语句失败: {err}"))?;
+
+            for entry in entries {
+                let term_key = make_term_key(&entry.term);
+                if term_key.is_empty() {
+                    continue;
+                }
+                stmt.execute(params![
+                    term_key,
+                    entry.term,
+                    entry.group,
+                    name_type_to_str(entry.name_type),
+                    gender_type_to_str(entry.gender_type),
+                    genre_type_to_str(entry.genre)
+                ])
+                .map_err(|err| format!("迁移词条失败: {err}"))?;
+            }
+        }
+
+        tx.commit()
+            .map_err(|err| format!("提交迁移事务失败: {err}"))?;
+        Ok(true)
+    }
+
+    fn load_legacy_entries_for_migration(
+        &self,
+        legacy_entries_path: &Path,
+    ) -> Result<Vec<NameEntry>, String> {
+        let data_dir = legacy_entries_path
+            .parent()
+            .ok_or_else(|| "旧词库目录路径无效".to_string())?
+            .to_path_buf();
+
+        let mut latest: HashMap<String, NameEntry> = HashMap::new();
+        let mut loaded_json = false;
+
+        let mut json_files = collect_json_files(&data_dir)?;
+        json_files.sort();
+        json_files.retain(|candidate| candidate != legacy_entries_path);
+        json_files.push(legacy_entries_path.to_path_buf());
+
+        for file_path in json_files {
+            if !file_path.exists() {
+                continue;
+            }
+            match load_entries_from_json_file(&file_path) {
+                Ok(loaded) => {
+                    loaded_json = true;
+                    for mut entry in loaded.entries {
+                        entry.term = entry.term.trim().to_string();
+                        entry.group = entry.group.trim().to_string();
+                        if entry.term.is_empty() {
+                            continue;
+                        }
+                        latest.insert(make_term_key(&entry.term), entry);
+                    }
+                }
+                Err(err) => {
+                    eprintln!("忽略无效 JSON 文件 {}: {err}", file_path.display());
+                }
+            }
+        }
+
+        if !loaded_json {
+            let legacy_path = data_dir
+                .parent()
+                .map(|dir| dir.join(LEGACY_DATA_FILE_NAME))
+                .unwrap_or_else(|| data_dir.join(LEGACY_DATA_FILE_NAME));
+            if legacy_path.exists() {
+                match load_entries_from_ndjson_file(&legacy_path) {
+                    Ok(entries) => {
+                        for mut entry in entries {
+                            entry.term = entry.term.trim().to_string();
+                            entry.group = entry.group.trim().to_string();
+                            if entry.term.is_empty() {
+                                continue;
+                            }
+                            latest.insert(make_term_key(&entry.term), entry);
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!("读取旧数据文件失败 {}: {err}", legacy_path.display());
+                    }
+                }
+            }
+        }
+
+        Ok(latest.into_values().collect())
+    }
+
+    fn backup_legacy_sources(&self, legacy_entries_path: &Path) -> Result<(), String> {
+        self.backup_single_legacy_file(legacy_entries_path)?;
+
+        let data_dir = match legacy_entries_path.parent() {
+            Some(value) => value,
+            None => return Ok(()),
+        };
+        let ndjson_path = data_dir
+            .parent()
+            .map(|dir| dir.join(LEGACY_DATA_FILE_NAME))
+            .unwrap_or_else(|| data_dir.join(LEGACY_DATA_FILE_NAME));
+        self.backup_single_legacy_file(&ndjson_path)
+    }
+
+    fn backup_single_legacy_file(&self, path: &Path) -> Result<(), String> {
+        if !path.exists() {
+            return Ok(());
+        }
+        let stamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let file_name = path
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or("entries");
+
+        for suffix in 0..1000_u32 {
+            let backup_name = if suffix == 0 {
+                format!("{file_name}.bak-{stamp}")
+            } else {
+                format!("{file_name}.bak-{stamp}-{suffix}")
+            };
+            let backup_path = path.with_file_name(backup_name);
+            if backup_path.exists() {
+                continue;
+            }
+            match fs::rename(path, &backup_path) {
+                Ok(_) => return Ok(()),
+                Err(_) => {
+                    fs::copy(path, &backup_path).map_err(|err| {
+                        format!(
+                            "备份旧词库文件失败 {} -> {}: {err}",
+                            path.display(),
+                            backup_path.display()
+                        )
+                    })?;
+                    return Ok(());
+                }
+            }
+        }
+
+        Err(format!(
+            "备份旧词库文件失败 {}: 备份文件名冲突",
+            path.display()
+        ))
+    }
+
     fn load_bundled_dictionaries<R: tauri::Runtime>(
         &self,
         app: &AppHandle<R>,
     ) -> Vec<DictionaryData> {
+        if let Some(db_path) = resolve_bundled_db_path(app) {
+            match self.load_bundled_dictionaries_from_db(db_path.as_path()) {
+                Ok(loaded) if !loaded.is_empty() => return loaded,
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("读取内置词库数据库失败 {}: {err}", db_path.display());
+                }
+            }
+        }
+
         for dict_dir in resolve_bundled_dict_dir_candidates(app) {
             let loaded = self.load_bundled_dictionaries_from_dir(&dict_dir);
             if loaded.is_empty() {
@@ -456,6 +761,66 @@ impl EntryStore {
             return loaded;
         }
         Vec::new()
+    }
+
+    fn load_bundled_dictionaries_from_db(
+        &self,
+        db_path: &Path,
+    ) -> Result<Vec<DictionaryData>, String> {
+        let conn =
+            Connection::open(db_path).map_err(|err| format!("打开内置词库数据库失败: {err}"))?;
+
+        let mut dict_stmt = conn
+            .prepare(
+                "SELECT dict_id, dict_name
+                 FROM dictionaries
+                 ORDER BY sort_order ASC, file_index ASC, dict_id ASC",
+            )
+            .map_err(|err| format!("读取内置词库目录失败: {err}"))?;
+
+        let dict_rows = dict_stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|err| format!("读取内置词库目录失败: {err}"))?;
+
+        let mut dictionaries: Vec<(String, String)> = Vec::new();
+        for row in dict_rows {
+            dictionaries.push(row.map_err(|err| format!("读取内置词库目录失败: {err}"))?);
+        }
+
+        let mut out = Vec::with_capacity(dictionaries.len());
+        let mut entry_stmt = conn
+            .prepare(
+                "SELECT term, group_name, name_type, gender_type, genre
+                 FROM entries
+                 WHERE dict_id = ?1
+                 ORDER BY id ASC",
+            )
+            .map_err(|err| format!("读取内置词库失败: {err}"))?;
+
+        for (dict_id, dict_name) in dictionaries {
+            let rows = entry_stmt
+                .query_map([dict_id.as_str()], |row| {
+                    Ok(NameEntry {
+                        term: row.get::<_, String>(0)?,
+                        group: row.get::<_, String>(1)?,
+                        name_type: parse_name_type(&row.get::<_, String>(2)?),
+                        gender_type: parse_gender_type(&row.get::<_, String>(3)?),
+                        genre: parse_genre_type(&row.get::<_, String>(4)?),
+                    })
+                })
+                .map_err(|err| format!("读取内置词库失败: {err}"))?;
+
+            let mut entries = Vec::new();
+            for row in rows {
+                entries.push(row.map_err(|err| format!("读取内置词库失败: {err}"))?);
+            }
+
+            out.push(DictionaryData::new(dict_id, dict_name, false, entries));
+        }
+
+        Ok(out)
     }
 
     fn load_bundled_dictionaries_from_dir(&self, dict_dir: &Path) -> Vec<DictionaryData> {

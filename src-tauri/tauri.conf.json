@@ -27,7 +27,7 @@
     "createUpdaterArtifacts": true,
     "targets": "nsis",
     "resources": [
-      "../dict"
+      "../build-in.db"
     ],
     "windows": {
       "nsis": {

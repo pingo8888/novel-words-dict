@@ -635,12 +635,14 @@ Section Install
     File /a "/oname={{this.[1]}}" "{{no-escape @key}}"
   {{/each}}
 
-  ; Mirror bundled dictionaries from resources (_up_) to install root dict directory.
-  CreateDirectory "$INSTDIR\dict"
-  IfFileExists "$INSTDIR\_up_\dict\*.*" 0 +2
-    CopyFiles /SILENT "$INSTDIR\_up_\dict\*.*" "$INSTDIR\dict"
-  ; Cleanup copied resource folder so final install layout does not expose _up_/dict.
-  RMDir /r "$INSTDIR\_up_"
+  ; Mirror bundled sqlite dictionary from resources (_up_) to install root.
+  IfFileExists "$INSTDIR\_up_\build-in.db" 0 +2
+    CopyFiles /SILENT "$INSTDIR\_up_\build-in.db" "$INSTDIR\build-in.db"
+  Delete "$INSTDIR\_up_\build-in.db"
+  RMDir "$INSTDIR\_up_"
+
+  ; Cleanup legacy bundled dictionary directory from older JSON-based installs.
+  RMDir /r "$INSTDIR\dict"
 
   ; Copy external binaries
   {{#each binaries}}
@@ -774,6 +776,7 @@ Section Uninstall
 
   ; Delete mirrored bundled dictionary directory.
   RMDir /r "$INSTDIR\dict"
+  Delete "$INSTDIR\build-in.db"
 
   ; Delete resources
   {{#each resources}}

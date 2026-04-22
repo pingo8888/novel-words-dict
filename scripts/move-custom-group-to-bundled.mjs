@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
 function printHelp() {
   console.log(`Usage:
@@ -13,6 +14,7 @@ Arguments:
 Options:
   --dry-run             Preview changes without writing files
   --settings <path>     Settings file path (default: %APPDATA%/com.local.novel-words-dict/settings.json)
+  --custom-db <path>    Custom SQLite database path (preferred)
   --custom <path>       Custom entries.json path (overrides --settings)
   --dict-dir <path>     Bundled dict directory (default: ./dict)
   --backup              Create backup before writing changed files
@@ -25,6 +27,7 @@ function parseArgs(argv) {
     dryRun: false,
     backup: false,
     settingsPath: null,
+    customDbPath: null,
     customPath: null,
     dictDir: path.resolve(process.cwd(), "dict"),
     help: false,
@@ -47,6 +50,11 @@ function parseArgs(argv) {
     }
     if (arg === "--settings") {
       options.settingsPath = argv[i + 1] ?? null;
+      i += 1;
+      continue;
+    }
+    if (arg === "--custom-db") {
+      options.customDbPath = argv[i + 1] ?? null;
       i += 1;
       continue;
     }
@@ -82,6 +90,9 @@ function parseArgs(argv) {
 
   if (options.settingsPath) {
     options.settingsPath = path.resolve(options.settingsPath);
+  }
+  if (options.customDbPath) {
+    options.customDbPath = path.resolve(options.customDbPath);
   }
   if (options.customPath) {
     options.customPath = path.resolve(options.customPath);
@@ -120,15 +131,49 @@ function sanitizeDictId(value) {
 function resolveDefaultSettingsPath() {
   const appData = process.env.APPDATA;
   if (!appData) {
-    throw new Error("APPDATA is not available; please provide --settings or --custom.");
+    throw new Error("APPDATA is not available; please provide --custom-db or --custom.");
   }
   return path.join(appData, "com.local.novel-words-dict", "settings.json");
 }
 
-function resolveCustomEntriesPath(options) {
-  if (options.customPath) {
-    return options.customPath;
+function resolveDefaultCustomDbPath() {
+  const appData = process.env.APPDATA;
+  if (!appData) {
+    throw new Error("APPDATA is not available; please provide --custom-db or --custom.");
   }
+  return path.join(appData, "com.local.novel-words-dict", "custom.db");
+}
+
+function normalizeTermKey(term) {
+  return term.trim().toLowerCase();
+}
+
+function ensureCustomDbSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS custom_entries (
+      term_key TEXT PRIMARY KEY,
+      term TEXT NOT NULL,
+      group_name TEXT NOT NULL DEFAULT '',
+      name_type TEXT NOT NULL,
+      gender_type TEXT NOT NULL,
+      genre TEXT NOT NULL
+    );
+  `);
+}
+
+function resolveCustomSource(options) {
+  if (options.customDbPath) {
+    return { kind: "db", path: options.customDbPath };
+  }
+  if (options.customPath) {
+    return { kind: "json", path: options.customPath };
+  }
+
+  const defaultCustomDbPath = resolveDefaultCustomDbPath();
+  if (fs.existsSync(defaultCustomDbPath)) {
+    return { kind: "db", path: defaultCustomDbPath };
+  }
+
   const settingsPath = options.settingsPath ?? resolveDefaultSettingsPath();
   if (!fs.existsSync(settingsPath)) {
     throw new Error(`Settings file not found: ${settingsPath}`);
@@ -139,7 +184,78 @@ function resolveCustomEntriesPath(options) {
     typeof settings.dictDir === "string" && settings.dictDir.trim().length > 0
       ? settings.dictDir.trim()
       : path.dirname(settingsPath);
-  return path.join(dictDir, "entries.json");
+  return { kind: "json", path: path.join(dictDir, "entries.json") };
+}
+
+function readCustomEntries(source) {
+  if (source.kind === "json") {
+    return readJsonArray(source.path);
+  }
+
+  if (!fs.existsSync(source.path)) {
+    throw new Error(`Custom db not found: ${source.path}`);
+  }
+  const db = new DatabaseSync(source.path);
+  try {
+    ensureCustomDbSchema(db);
+    const rows = db
+      .prepare(
+        `SELECT term, group_name, name_type, gender_type, genre
+         FROM custom_entries
+         ORDER BY term COLLATE NOCASE ASC`,
+      )
+      .all();
+    return rows.map((row) => ({
+      term: String(row.term ?? ""),
+      group: String(row.group_name ?? ""),
+      nameType: String(row.name_type ?? "both"),
+      genderType: String(row.gender_type ?? "both"),
+      genre: String(row.genre ?? "west"),
+    }));
+  } finally {
+    db.close();
+  }
+}
+
+function writeCustomEntries(source, entries) {
+  if (source.kind === "json") {
+    fs.writeFileSync(source.path, formatJsonArray(entries), "utf8");
+    return;
+  }
+
+  const db = new DatabaseSync(source.path);
+  try {
+    ensureCustomDbSchema(db);
+    db.exec("BEGIN");
+    try {
+      db.prepare("DELETE FROM custom_entries").run();
+      const insert = db.prepare(
+        `INSERT INTO custom_entries (term_key, term, group_name, name_type, gender_type, genre)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      );
+      for (const entry of entries) {
+        const term = typeof entry.term === "string" ? entry.term.trim() : "";
+        if (!term) {
+          continue;
+        }
+        const group = normalizeGroup(entry.group);
+        insert.run(
+          normalizeTermKey(term),
+          term,
+          group,
+          typeof entry.nameType === "string" ? entry.nameType.trim().toLowerCase() : "both",
+          typeof entry.genderType === "string" ? entry.genderType.trim().toLowerCase() : "both",
+          typeof entry.genre === "string" ? entry.genre.trim().toLowerCase() : "west",
+        );
+      }
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+  } finally {
+    db.close();
+  }
 }
 
 function readJsonArray(filePath) {
@@ -305,8 +421,8 @@ function main() {
       throw new Error(`Bundled dict directory not found: ${options.dictDir}`);
     }
 
-    const customPath = resolveCustomEntriesPath(options);
-    const customArray = readJsonArray(customPath);
+    const customSource = resolveCustomSource(options);
+    const customArray = readCustomEntries(customSource);
     const targetPath = path.join(options.dictDir, params.fileName);
 
     const keptCustomItems = [];
@@ -341,9 +457,7 @@ function main() {
     const nextTargetContent = formatJsonArray([...targetData.metaItems, ...deduped.unique]);
     const targetChanged = !targetData.existed || nextTargetContent !== targetData.rawContent;
 
-    const nextCustomContent = formatJsonArray(keptCustomItems);
-    const prevCustomContent = fs.readFileSync(customPath, "utf8");
-    const customChanged = nextCustomContent !== prevCustomContent;
+    const customChanged = movedCount > 0;
 
     const backupFiles = new Set();
     const backupStamp = new Date().toISOString().replaceAll(":", "").replaceAll(".", "");
@@ -354,12 +468,12 @@ function main() {
         fs.writeFileSync(targetPath, nextTargetContent, "utf8");
       }
       if (customChanged) {
-        backupFileIfNeeded(customPath, options.backup, backupStamp, backupFiles);
-        fs.writeFileSync(customPath, nextCustomContent, "utf8");
+        backupFileIfNeeded(customSource.path, options.backup, backupStamp, backupFiles);
+        writeCustomEntries(customSource, keptCustomItems);
       }
     }
 
-    console.log(`custom entries: ${customPath}`);
+    console.log(`custom source: ${customSource.path} (${customSource.kind})`);
     console.log(`target file: ${targetPath}`);
     console.log(`dictId arg: ${params.dictId}`);
     console.log(`group arg: ${params.group || "(empty)"}`);

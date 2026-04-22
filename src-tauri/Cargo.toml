@@ -1,6 +1,6 @@
 [package]
 name = "novel-words-dict"
-version = "0.1.4"
+version = "0.1.5"
 description = "Name dictionary desktop app"
 authors = ["novel-words-dict contributors"]
 edition = "2021"
@@ -38,4 +38,5 @@ windows-sys = { version = "0.59", features = [
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
+
 

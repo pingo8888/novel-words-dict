@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { Lock, Mars, Settings, Venus, VenusAndMars } from "lucide-vue-next";
+import { Lock, Settings } from "lucide-vue-next";
 import HomeSettingsDialog from "./HomeSettingsDialog.vue";
 import UpdateConfirmDialog from "./UpdateConfirmDialog.vue";
 import { useHomePage } from "./useHomePage";
@@ -176,24 +176,13 @@ watch(settingsVisible, (visible) => {
                 class="entry-icon"
                 :class="getGenderIconClass(entry.genderType)"
               >
-                <Mars
-                  v-if="entry.genderType === 'male'"
-                  class="entry-lucide"
-                  :size="12"
-                  :stroke-width="2"
-                />
-                <Venus
-                  v-else-if="entry.genderType === 'female'"
-                  class="entry-lucide"
-                  :size="12"
-                  :stroke-width="2"
-                />
-                <VenusAndMars
-                  v-else
-                  class="entry-lucide"
-                  :size="12"
-                  :stroke-width="2"
-                />
+                {{
+                  entry.genderType === "male"
+                    ? "♂"
+                    : entry.genderType === "female"
+                      ? "♀"
+                      : "⚥"
+                }}
               </span>
             </div>
             <div class="entry-main">

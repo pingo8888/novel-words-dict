@@ -1,6 +1,12 @@
 [
 {"dictId":"build-in dict"},
+{"term":"《阿闼婆吠陀》","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"《梨俱吠陀》","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"《玫瑰经》","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"《女巫之锤》","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"《宗教裁判所指南》","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"白鹰号","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"裁判官","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"复仇号","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"好运号","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"桦皮舟","group":"","nameType":"others","genderType":"both","genre":"west"},
@@ -16,5 +22,7 @@
 {"term":"赛绳","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"铜表法","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"习惯法","group":"","nameType":"others","genderType":"both","genre":"west"},
-{"term":"贼鸥号","group":"","nameType":"others","genderType":"both","genre":"west"}
+{"term":"贼鸥号","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"替罪者","group":"巫术植物","nameType":"others","genderType":"both","genre":"west"},
+{"term":"岩相学","group":"巫术植物","nameType":"others","genderType":"both","genre":"west"}
 ]

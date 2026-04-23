@@ -1,5 +1,10 @@
 [
 {"dictId":"build-in dict"},
 {"term":"奥古斯都","group":"","nameType":"title","genderType":"both","genre":"west"},
-{"term":"乐昌公主","group":"","nameType":"title","genderType":"both","genre":"east"}
+{"term":"腓特烈三世","group":"","nameType":"title","genderType":"both","genre":"west"},
+{"term":"乐昌公主","group":"","nameType":"title","genderType":"both","genre":"east"},
+{"term":"诺森八世","group":"","nameType":"title","genderType":"both","genre":"west"},
+{"term":"西克斯图斯四世","group":"","nameType":"title","genderType":"both","genre":"west"},
+{"term":"英诺森八世","group":"","nameType":"title","genderType":"both","genre":"west"},
+{"term":"皮媞亚","group":"巫术植物","nameType":"title","genderType":"both","genre":"west"}
 ]

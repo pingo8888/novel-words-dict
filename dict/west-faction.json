@@ -1,4 +1,8 @@
 [
 {"dictId":"build-in dict"},
-{"term":"阿里乌斯派","group":"","nameType":"faction","genderType":"both","genre":"west"}
+{"term":"阿里乌斯派","group":"","nameType":"faction","genderType":"both","genre":"west"},
+{"term":"道明会","group":"","nameType":"faction","genderType":"both","genre":"west"},
+{"term":"多明我会","group":"","nameType":"faction","genderType":"both","genre":"west"},
+{"term":"胡斯派","group":"","nameType":"faction","genderType":"both","genre":"west"},
+{"term":"神圣罗马帝国","group":"","nameType":"faction","genderType":"both","genre":"west"}
 ]

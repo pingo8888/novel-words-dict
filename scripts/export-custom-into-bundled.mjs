@@ -33,6 +33,15 @@ const TARGET_CONFIG = {
   "east-place.json": {
     dictId: "east-place",
   },
+  "west-myth.json": {
+    dictId: "west-myth",
+  },
+  "east-myth.json": {
+    dictId: "east-myth",
+  },
+  "skills.json": {
+    dictId: "skills",
+  },
   "nickname.json": {
     dictId: "nickname",
   },
@@ -338,6 +347,15 @@ function detectTargetFile(entry) {
   if (nameType === "place" && genre === "east") {
     return "east-place.json";
   }
+  if (nameType === "myth" && genre === "west") {
+    return "west-myth.json";
+  }
+  if (nameType === "myth" && genre === "east") {
+    return "east-myth.json";
+  }
+  if (nameType === "skill" || nameType === "skills") {
+    return "skills.json";
+  }
   if (nameType === "nickname") {
     return "nickname.json";
   }
@@ -424,6 +442,33 @@ function toBundledEntry(entry, targetFile) {
       nameType: "place",
       genderType: normalizeGenderType(entry.genderType),
       genre: "east",
+    };
+  }
+  if (targetFile === "west-myth.json") {
+    return {
+      term,
+      group,
+      nameType: "myth",
+      genderType: normalizeGenderType(entry.genderType),
+      genre: "west",
+    };
+  }
+  if (targetFile === "east-myth.json") {
+    return {
+      term,
+      group,
+      nameType: "myth",
+      genderType: normalizeGenderType(entry.genderType),
+      genre: "east",
+    };
+  }
+  if (targetFile === "skills.json") {
+    return {
+      term,
+      group,
+      nameType: "skill",
+      genderType: normalizeGenderType(entry.genderType),
+      genre: normalizeGenreType(entry.genre),
     };
   }
   if (targetFile === "nickname.json") {

@@ -344,7 +344,7 @@
 {"term":"伊利斯坦","group":"龙枪","nameType":"given","genderType":"male","genre":"west"},
 {"term":"伊斯塔","group":"龙枪","nameType":"given","genderType":"male","genre":"west"},
 {"term":"伊斯塔城","group":"龙枪","nameType":"place","genderType":"both","genre":"west"},
-{"term":"伊斯塔王国","group":"龙枪","nameType":"place","genderType":"both","genre":"west"},
+{"term":"伊斯塔王国","group":"龙枪","nameType":"faction","genderType":"both","genre":"west"},
 {"term":"伊斯塔血海","group":"龙枪","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"伊斯塔之塔","group":"龙枪","nameType":"place","genderType":"both","genre":"west"},
 {"term":"医疗女神","group":"龙枪","nameType":"others","genderType":"both","genre":"west"},
@@ -365,5 +365,5 @@
 {"term":"猪和哨声旅店","group":"龙枪","nameType":"place","genderType":"both","genre":"west"},
 {"term":"追寻者评议会","group":"龙枪","nameType":"faction","genderType":"both","genre":"west"},
 {"term":"最后归宿旅店","group":"龙枪","nameType":"place","genderType":"both","genre":"west"},
-{"term":"博赛尔","group":"龙全国","nameType":"given","genderType":"male","genre":"west"}
+{"term":"博赛尔","group":"龙枪","nameType":"given","genderType":"male","genre":"west"}
 ]

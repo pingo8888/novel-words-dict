@@ -32,7 +32,7 @@ const ALL_DICT_ID: &str = "all";
 const ALL_DICT_NAME: &str = "所有词库";
 const CUSTOM_DICT_ID: &str = "custom";
 const CUSTOM_DICT_NAME: &str = "自定词库";
-const PAGE_SIZE: usize = 40;
+const PAGE_SIZE: usize = 30;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

@@ -11,6 +11,8 @@ function printHelp() {
 Options:
   --dict-dir <path>   Built-in dict source directory (default: ./dict)
   --out <path>        Output sqlite file path (default: ./build-in.db)
+  --empty             Build an empty database without reading dict JSON files
+  --skip-dict-json    Alias for --empty
   --verify            Validate source only, do not write output file
   --help              Show this message
 `);
@@ -20,6 +22,7 @@ function parseArgs(argv) {
   const options = {
     dictDir: path.resolve(process.cwd(), "dict"),
     outPath: path.resolve(process.cwd(), "build-in.db"),
+    empty: false,
     verify: false,
     help: false,
   };
@@ -32,6 +35,10 @@ function parseArgs(argv) {
     }
     if (arg === "--verify") {
       options.verify = true;
+      continue;
+    }
+    if (arg === "--empty" || arg === "--skip-dict-json") {
+      options.empty = true;
       continue;
     }
     if (arg === "--dict-dir") {
@@ -229,7 +236,11 @@ function loadDictOrderConfig(dictDir) {
   return out;
 }
 
-function buildBuckets(dictDir) {
+function buildBuckets(dictDir, options = {}) {
+  if (options.empty) {
+    return [];
+  }
+
   if (!fs.existsSync(dictDir)) {
     throw new Error(`Dict directory not found: ${dictDir}`);
   }
@@ -405,7 +416,7 @@ function main() {
       return;
     }
 
-    const buckets = buildBuckets(options.dictDir);
+    const buckets = buildBuckets(options.dictDir, { empty: options.empty });
     const dictCount = buckets.length;
     const entryCount = buckets.reduce((acc, bucket) => acc + bucket.entries.length, 0);
 

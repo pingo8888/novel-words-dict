@@ -4,12 +4,12 @@ import { DatabaseSync } from "node:sqlite";
 
 function printHelp() {
   console.log(`Usage:
-  node scripts/move-custom-group-to-bundled.mjs <fileName> <dictId> <group> [options]
+  node scripts/move-custom-group-to-bundled.mjs <fileName> <dictId> [group] [options]
 
 Arguments:
   fileName              Target bundled dict file name under ./dict (must end with .json)
   dictId                Dict id to initialize when target file has no dictId
-  group                 Group value to move from custom entries (trim exact match)
+  group                 Group value to move from custom entries; omit for empty group
 
 Options:
   --dry-run             Preview changes without writing files
@@ -77,8 +77,8 @@ function parseArgs(argv) {
   if (options.help) {
     return { options, params: null };
   }
-  if (positionals.length !== 3) {
-    throw new Error("Expected 3 arguments: <fileName> <dictId> <group>");
+  if (positionals.length < 2 || positionals.length > 3) {
+    throw new Error("Expected 2 or 3 arguments: <fileName> <dictId> [group]");
   }
 
   const fileName = validateFileName(positionals[0]);
@@ -86,7 +86,7 @@ function parseArgs(argv) {
   if (!dictId) {
     throw new Error("dictId is invalid; use letters/numbers/-/_");
   }
-  const group = positionals[2].trim();
+  const group = (positionals[2] ?? "").trim();
 
   if (options.settingsPath) {
     options.settingsPath = path.resolve(options.settingsPath);

@@ -553,6 +553,7 @@
 {"term":"普茨","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"普拉多夫","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"普莱尼诺维奇","group":"","nameType":"surname","genderType":"both","genre":"west"},
+{"term":"普林尼","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"齐薇格","group":"","nameType":"surname","genderType":"female","genre":"west"},
 {"term":"强森","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"乔布斯","group":"","nameType":"surname","genderType":"both","genre":"west"},
@@ -571,6 +572,7 @@
 {"term":"塞伯","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"塞尔维亚蒂","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"塞弗里德","group":"","nameType":"surname","genderType":"both","genre":"west"},
+{"term":"塞孔都斯","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"塞隆","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"塞默","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"赛杜","group":"","nameType":"surname","genderType":"both","genre":"west"},
@@ -690,7 +692,5 @@
 {"term":"约万诺维奇","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"扎尔","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"詹金斯","group":"","nameType":"surname","genderType":"both","genre":"west"},
-{"term":"朱莉","group":"","nameType":"surname","genderType":"female","genre":"west"},
-{"term":"普林尼","group":"","nameType":"surname","genderType":"both","genre":"west"},
-{"term":"塞孔都斯","group":"","nameType":"surname","genderType":"both","genre":"west"}
+{"term":"朱莉","group":"","nameType":"surname","genderType":"female","genre":"west"}
 ]

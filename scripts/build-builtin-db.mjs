@@ -68,6 +68,7 @@ function normalizeNameType(value) {
     "given",
     "place",
     "myth",
+    "people",
     "creature",
     "monster",
     "gear",

@@ -472,6 +472,8 @@ export function useHomePage() {
         return ["地"];
       case "myth":
         return ["神"];
+      case "people":
+        return ["人"];
       case "creature":
         return ["生"];
       case "monster":

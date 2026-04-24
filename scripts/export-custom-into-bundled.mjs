@@ -42,6 +42,12 @@ const TARGET_CONFIG = {
   "skills.json": {
     dictId: "skills",
   },
+  "monster.json": {
+    dictId: "monster",
+  },
+  "people.json": {
+    dictId: "people",
+  },
   "nickname.json": {
     dictId: "nickname",
   },
@@ -356,6 +362,12 @@ function detectTargetFile(entry) {
   if (nameType === "skill" || nameType === "skills") {
     return "skills.json";
   }
+  if (nameType === "monster") {
+    return "monster.json";
+  }
+  if (nameType === "people") {
+    return "people.json";
+  }
   if (nameType === "nickname") {
     return "nickname.json";
   }
@@ -467,6 +479,24 @@ function toBundledEntry(entry, targetFile) {
       term,
       group,
       nameType: "skill",
+      genderType: normalizeGenderType(entry.genderType),
+      genre: normalizeGenreType(entry.genre),
+    };
+  }
+  if (targetFile === "monster.json") {
+    return {
+      term,
+      group,
+      nameType: "monster",
+      genderType: normalizeGenderType(entry.genderType),
+      genre: normalizeGenreType(entry.genre),
+    };
+  }
+  if (targetFile === "people.json") {
+    return {
+      term,
+      group,
+      nameType: "people",
       genderType: normalizeGenderType(entry.genderType),
       genre: normalizeGenreType(entry.genre),
     };

@@ -4,8 +4,13 @@
 {"term":"暗影森林","group":"","nameType":"place","genderType":"both","genre":"west"},
 {"term":"奥格斯堡","group":"","nameType":"place","genderType":"both","genre":"west"},
 {"term":"霍巴特","group":"","nameType":"place","genderType":"both","genre":"west"},
+{"term":"克吕尼修道院","group":"","nameType":"place","genderType":"both","genre":"west"},
 {"term":"拉文斯堡","group":"","nameType":"place","genderType":"both","genre":"west"},
 {"term":"明德尔海姆","group":"","nameType":"place","genderType":"both","genre":"west"},
+{"term":"帕拉蒂尼","group":"","nameType":"place","genderType":"both","genre":"west"},
 {"term":"施派尔镇","group":"","nameType":"place","genderType":"both","genre":"west"},
-{"term":"因斯布鲁克","group":"","nameType":"place","genderType":"both","genre":"west"}
+{"term":"因斯布鲁克","group":"","nameType":"place","genderType":"both","genre":"west"},
+{"term":"“女巫之国”色萨利","group":"巫术植物","nameType":"place","genderType":"both","genre":"west"},
+{"term":"阿卡迪亚","group":"巫术植物","nameType":"place","genderType":"both","genre":"west"},
+{"term":"拉科尼亚","group":"巫术植物","nameType":"place","genderType":"both","genre":"west"}
 ]

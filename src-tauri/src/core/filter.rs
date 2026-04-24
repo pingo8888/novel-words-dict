@@ -16,6 +16,7 @@ pub(crate) fn matches_name_type_filter(filter: &str, value: NameType) -> bool {
         "given" => value == NameType::Given || value == NameType::Both,
         "place" => value == NameType::Place || value == NameType::Both,
         "myth" => value == NameType::Myth || value == NameType::Both,
+        "people" => value == NameType::People || value == NameType::Both,
         "creature" => value == NameType::Creature || value == NameType::Both,
         "monster" => value == NameType::Monster || value == NameType::Both,
         "gear" => value == NameType::Gear || value == NameType::Both,

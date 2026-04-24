@@ -97,6 +97,7 @@ watch(settingsVisible, (visible) => {
             <option value="given">名字</option>
             <option value="place">地名</option>
             <option value="myth">神话</option>
+            <option value="people">人物</option>
             <option value="creature">生物</option>
             <option value="monster">怪物</option>
             <option value="gear">装备</option>

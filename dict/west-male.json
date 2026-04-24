@@ -29,6 +29,7 @@
 {"term":"艾米","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"艾瑞克","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"爱德华","group":"","nameType":"given","genderType":"male","genre":"west"},
+{"term":"安布鲁瓦兹","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"安德烈","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"安德烈亚","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"安德鲁","group":"","nameType":"given","genderType":"male","genre":"west"},
@@ -157,6 +158,7 @@
 {"term":"杰瑞米","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"杰森","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"杰西","group":"","nameType":"given","genderType":"male","genre":"west"},
+{"term":"居伊","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"卡达尔","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"卡尔","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"卡尔金","group":"","nameType":"given","genderType":"male","genre":"west"},
@@ -175,6 +177,7 @@
 {"term":"科尔曼","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"科林","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"科斯特罗","group":"","nameType":"given","genderType":"male","genre":"west"},
+{"term":"科西莫","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"克劳德","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"克里斯","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"克里斯蒂安","group":"","nameType":"given","genderType":"male","genre":"west"},
@@ -184,6 +187,7 @@
 {"term":"库尔特","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"昆汀","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"拉尔夫","group":"","nameType":"given","genderType":"male","genre":"west"},
+{"term":"拉图尔","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"莱昂纳多","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"莱恩","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"兰贝图斯","group":"","nameType":"given","genderType":"male","genre":"west"},
@@ -360,5 +364,6 @@
 {"term":"詹姆斯","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"詹尼","group":"","nameType":"given","genderType":"male","genre":"west"},
 {"term":"詹森","group":"","nameType":"given","genderType":"male","genre":"west"},
-{"term":"朱利安","group":"","nameType":"given","genderType":"male","genre":"west"}
+{"term":"朱利安","group":"","nameType":"given","genderType":"male","genre":"west"},
+{"term":"盖乌斯","group":"巫术植物","nameType":"given","genderType":"male","genre":"west"}
 ]

@@ -4,6 +4,7 @@ export type NameType =
   | "given"
   | "place"
   | "myth"
+  | "people"
   | "monster"
   | "gear"
   | "food"

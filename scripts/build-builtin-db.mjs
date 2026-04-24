@@ -78,6 +78,7 @@ function normalizeNameType(value) {
     "faction",
     "title",
     "nickname",
+    "book",
     "others",
   ]);
   if (normalized === "items") {

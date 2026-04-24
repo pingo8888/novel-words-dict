@@ -19,6 +19,7 @@ pub(crate) enum NameType {
     Faction,
     Title,
     Nickname,
+    Book,
     #[serde(alias = "incantation")]
     Others,
 }

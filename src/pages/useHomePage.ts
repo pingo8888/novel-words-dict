@@ -492,6 +492,8 @@ export function useHomePage() {
         return ["衔"];
       case "nickname":
         return ["绰"];
+      case "book":
+        return ["书"];
       case "others":
         return [];
       case "both":

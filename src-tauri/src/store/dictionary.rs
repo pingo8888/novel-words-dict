@@ -24,6 +24,7 @@ fn name_type_search_text(value: NameType) -> &'static str {
         NameType::Faction => "faction 势力",
         NameType::Title => "title 头衔",
         NameType::Nickname => "nickname 绰号",
+        NameType::Book => "book 书籍",
         NameType::Others => "others 其他",
     }
 }

@@ -26,6 +26,7 @@ pub(crate) fn matches_name_type_filter(filter: &str, value: NameType) -> bool {
         "faction" => value == NameType::Faction || value == NameType::Both,
         "title" => value == NameType::Title || value == NameType::Both,
         "nickname" => value == NameType::Nickname || value == NameType::Both,
+        "book" => value == NameType::Book || value == NameType::Both,
         "others" => value == NameType::Others || value == NameType::Both,
         "both" => value == NameType::Both,
         _ => true,

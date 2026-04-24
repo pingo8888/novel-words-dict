@@ -72,6 +72,7 @@ fn name_type_to_str(value: NameType) -> &'static str {
         NameType::Faction => "faction",
         NameType::Title => "title",
         NameType::Nickname => "nickname",
+        NameType::Book => "book",
         NameType::Others => "others",
     }
 }
@@ -92,6 +93,7 @@ fn parse_name_type(value: &str) -> NameType {
         "faction" => NameType::Faction,
         "title" => NameType::Title,
         "nickname" => NameType::Nickname,
+        "book" => NameType::Book,
         "others" | "other" | "incantation" => NameType::Others,
         _ => NameType::Both,
     }

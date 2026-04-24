@@ -107,6 +107,7 @@ watch(settingsVisible, (visible) => {
             <option value="faction">势力</option>
             <option value="title">头衔</option>
             <option value="nickname">绰号</option>
+            <option value="book">书籍</option>
             <option value="others">其他</option>
           </select>
         </label>

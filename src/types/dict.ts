@@ -13,6 +13,7 @@ export type NameType =
   | "faction"
   | "title"
   | "nickname"
+  | "book"
   | "creature"
   | "others";
 

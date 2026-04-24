@@ -213,6 +213,25 @@ export function useHomePage() {
     await query(false);
   }
 
+  function handlePageShortcut(event: KeyboardEvent): void {
+    if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      return;
+    }
+    if (settingsVisible.value || updateConfirmVisible.value) {
+      return;
+    }
+
+    event.preventDefault();
+    if (event.key === "ArrowLeft") {
+      void prevPage();
+      return;
+    }
+    void nextPage();
+  }
+
   function handleResultWheel(event: WheelEvent): void {
     if (event.ctrlKey) {
       return;
@@ -543,6 +562,7 @@ export function useHomePage() {
   }
 
   onMounted(async () => {
+    window.addEventListener("keydown", handlePageShortcut);
     await initializeSettings();
     try {
       appVersion.value = await getVersion();
@@ -572,6 +592,7 @@ export function useHomePage() {
   });
 
   onBeforeUnmount(() => {
+    window.removeEventListener("keydown", handlePageShortcut);
     if (resolveUpdateConfirm) {
       resolveUpdateConfirm(false);
       resolveUpdateConfirm = null;

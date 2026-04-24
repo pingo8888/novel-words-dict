@@ -315,7 +315,17 @@ function normalizeGenderType(value) {
 }
 
 function normalizeGenre(value) {
-  return typeof value === "string" ? value.trim().toLowerCase() : "";
+  const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (normalized === "china" || normalized === "east") {
+    return "china";
+  }
+  if (normalized === "japan") {
+    return "japan";
+  }
+  if (normalized === "west") {
+    return "west";
+  }
+  return "";
 }
 
 function detectTargetFile(entry) {
@@ -332,31 +342,31 @@ function detectTargetFile(entry) {
   if (nameType === "surname" && genre === "west") {
     return "west-surname.json";
   }
-  if (nameType === "given" && genderType === "female" && genre === "east") {
+  if (nameType === "given" && genderType === "female" && genre === "china") {
     return "east-female.json";
   }
-  if (nameType === "given" && genderType === "male" && genre === "east") {
+  if (nameType === "given" && genderType === "male" && genre === "china") {
     return "east-male.json";
   }
-  if (nameType === "given" && genderType === "both" && genre === "east") {
+  if (nameType === "given" && genderType === "both" && genre === "china") {
     return "east-netural.json";
   }
   if (nameType === "faction" && genre === "west") {
     return "west-faction.json";
   }
-  if (nameType === "faction" && genre === "east") {
+  if (nameType === "faction" && genre === "china") {
     return "east-faction.json";
   }
   if (nameType === "place" && genre === "west") {
     return "west-place.json";
   }
-  if (nameType === "place" && genre === "east") {
+  if (nameType === "place" && genre === "china") {
     return "east-place.json";
   }
   if (nameType === "myth" && genre === "west") {
     return "west-myth.json";
   }
-  if (nameType === "myth" && genre === "east") {
+  if (nameType === "myth" && genre === "china") {
     return "east-myth.json";
   }
   if (nameType === "skill" || nameType === "skills") {
@@ -385,7 +395,7 @@ function detectTargetFile(entry) {
 
 function normalizeGenreType(value) {
   const normalized = normalizeGenre(value);
-  if (normalized === "east" || normalized === "west") {
+  if (normalized === "china" || normalized === "japan" || normalized === "west") {
     return normalized;
   }
   return "west";
@@ -412,13 +422,13 @@ function toBundledEntry(entry, targetFile) {
     return { term, group, nameType: "given", genderType: "male", genre: "west" };
   }
   if (targetFile === "east-female.json") {
-    return { term, group, nameType: "given", genderType: "female", genre: "east" };
+    return { term, group, nameType: "given", genderType: "female", genre: "china" };
   }
   if (targetFile === "east-male.json") {
-    return { term, group, nameType: "given", genderType: "male", genre: "east" };
+    return { term, group, nameType: "given", genderType: "male", genre: "china" };
   }
   if (targetFile === "east-netural.json") {
-    return { term, group, nameType: "given", genderType: "both", genre: "east" };
+    return { term, group, nameType: "given", genderType: "both", genre: "china" };
   }
   if (targetFile === "west-faction.json") {
     return {
@@ -435,7 +445,7 @@ function toBundledEntry(entry, targetFile) {
       group,
       nameType: "faction",
       genderType: normalizeGenderType(entry.genderType),
-      genre: "east",
+      genre: "china",
     };
   }
   if (targetFile === "west-place.json") {
@@ -453,7 +463,7 @@ function toBundledEntry(entry, targetFile) {
       group,
       nameType: "place",
       genderType: normalizeGenderType(entry.genderType),
-      genre: "east",
+      genre: "china",
     };
   }
   if (targetFile === "west-myth.json") {
@@ -471,7 +481,7 @@ function toBundledEntry(entry, targetFile) {
       group,
       nameType: "myth",
       genderType: normalizeGenderType(entry.genderType),
-      genre: "east",
+      genre: "china",
     };
   }
   if (targetFile === "skills.json") {

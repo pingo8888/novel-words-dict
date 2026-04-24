@@ -39,7 +39,8 @@ fn gender_type_search_text(value: GenderType) -> &'static str {
 
 fn genre_search_text(value: GenreType) -> &'static str {
     match value {
-        GenreType::East => "东方",
+        GenreType::China => "china 中国 东方",
+        GenreType::Japan => "japan 日本",
         GenreType::West => "西方",
     }
 }

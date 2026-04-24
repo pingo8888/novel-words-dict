@@ -1,5 +1,5 @@
 [
-{"dictId":"build-in dict"},
+{"dictId":"build-in"},
 {"term":"暗黑星辰","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},
 {"term":"暴风球","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},
 {"term":"庇护术","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},
@@ -243,10 +243,5 @@
 {"term":"祝福术","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},
 {"term":"灼热金属","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},
 {"term":"灼热射线","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},
-{"term":"自然之怒","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"},
-{"term":"火占术","group":"巫术植物","nameType":"skill","genderType":"both","genre":"west"},
-{"term":"结绳咒","group":"巫术植物","nameType":"skill","genderType":"both","genre":"west"},
-{"term":"鸟占术","group":"巫术植物","nameType":"skill","genderType":"both","genre":"west"},
-{"term":"水占术","group":"巫术植物","nameType":"skill","genderType":"both","genre":"west"},
-{"term":"占天术","group":"巫术植物","nameType":"skill","genderType":"both","genre":"west"}
+{"term":"自然之怒","group":"龙与地下城","nameType":"skill","genderType":"both","genre":"west"}
 ]

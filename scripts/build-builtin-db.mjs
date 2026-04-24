@@ -110,7 +110,13 @@ function normalizeGenderType(value) {
 
 function normalizeGenre(value) {
   const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
-  return normalized === "east" ? "east" : "west";
+  if (normalized === "china" || normalized === "east") {
+    return "china";
+  }
+  if (normalized === "japan") {
+    return "japan";
+  }
+  return "west";
 }
 
 function isEntry(item) {

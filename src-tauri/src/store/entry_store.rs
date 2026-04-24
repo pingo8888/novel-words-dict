@@ -117,14 +117,16 @@ fn parse_gender_type(value: &str) -> GenderType {
 
 fn genre_type_to_str(value: GenreType) -> &'static str {
     match value {
-        GenreType::East => "east",
+        GenreType::China => "china",
+        GenreType::Japan => "japan",
         GenreType::West => "west",
     }
 }
 
 fn parse_genre_type(value: &str) -> GenreType {
     match value.trim().to_ascii_lowercase().as_str() {
-        "east" => GenreType::East,
+        "china" | "east" => GenreType::China,
+        "japan" => GenreType::Japan,
         _ => GenreType::West,
     }
 }

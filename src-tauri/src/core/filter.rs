@@ -3,7 +3,8 @@ use super::types::{GenderType, GenreType, NameType};
 pub(crate) fn matches_genre_filter(filter: &str, value: GenreType) -> bool {
     match filter {
         "all" => true,
-        "east" => value == GenreType::East,
+        "china" | "east" => value == GenreType::China,
+        "japan" => value == GenreType::Japan,
         "west" => value == GenreType::West,
         _ => true,
     }

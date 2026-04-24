@@ -36,7 +36,9 @@ pub(crate) enum GenderType {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum GenreType {
-    East,
+    #[serde(alias = "east")]
+    China,
+    Japan,
     #[default]
     West,
 }

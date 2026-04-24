@@ -84,7 +84,8 @@ watch(settingsVisible, (visible) => {
           <span>风格</span>
           <select v-model="filters.genreType">
             <option value="all">所有</option>
-            <option value="east">东方</option>
+            <option value="china">中国</option>
+            <option value="japan">日本</option>
             <option value="west">西方</option>
           </select>
         </label>

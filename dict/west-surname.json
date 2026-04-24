@@ -1,5 +1,5 @@
 [
-{"dictId":"build-in dict"},
+{"dictId":"build-in"},
 {"term":"阿多尼斯","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"阿尔巴","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"阿尔贝克","group":"","nameType":"surname","genderType":"both","genre":"west"},
@@ -691,6 +691,6 @@
 {"term":"扎尔","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"詹金斯","group":"","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"朱莉","group":"","nameType":"surname","genderType":"female","genre":"west"},
-{"term":"普林尼","group":"巫术植物","nameType":"surname","genderType":"both","genre":"west"},
-{"term":"塞孔都斯","group":"巫术植物","nameType":"surname","genderType":"both","genre":"west"}
+{"term":"普林尼","group":"","nameType":"surname","genderType":"both","genre":"west"},
+{"term":"塞孔都斯","group":"","nameType":"surname","genderType":"both","genre":"west"}
 ]

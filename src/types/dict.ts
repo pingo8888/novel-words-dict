@@ -18,7 +18,7 @@ export type NameType =
   | "others";
 
 export type GenderType = "both" | "male" | "female";
-export type GenreType = "east" | "west";
+export type GenreType = "china" | "japan" | "west";
 export type ToastTone = "info" | "error";
 
 export type NameTypeFilter = "all" | NameType;

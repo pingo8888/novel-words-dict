@@ -124,6 +124,17 @@ function normalizeTermKey(term) {
   return term.trim().toLowerCase();
 }
 
+function normalizeGenre(value) {
+  const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (normalized === "china" || normalized === "east") {
+    return "china";
+  }
+  if (normalized === "japan") {
+    return "japan";
+  }
+  return "west";
+}
+
 function ensureCustomDbSchema(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS custom_entries (
@@ -224,10 +235,7 @@ function writeCustomEntries(source, entries) {
           typeof entry.genderType === "string" && entry.genderType.trim()
             ? entry.genderType.trim().toLowerCase()
             : "both";
-        const genre =
-          typeof entry.genre === "string" && entry.genre.trim()
-            ? entry.genre.trim().toLowerCase()
-            : "west";
+        const genre = normalizeGenre(entry.genre);
         insert.run(normalizeTermKey(term), term, group, nameType, genderType, genre);
       }
       db.exec("COMMIT");

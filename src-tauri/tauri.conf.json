@@ -1,6 +1,6 @@
 {
   "productName": "novel-words-dict",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "identifier": "com.local.novel-words-dict",
   "build": {
     "beforeDevCommand": "npm run dev",

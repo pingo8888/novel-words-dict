@@ -13,6 +13,16 @@ pub(crate) struct QueryRequest {
     pub(crate) page: Option<usize>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GroupSuggestionRequest {
+    pub(crate) dict_id: Option<String>,
+    pub(crate) genre_type: Option<String>,
+    pub(crate) name_type: Option<String>,
+    pub(crate) gender_type: Option<String>,
+    pub(crate) keyword: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct QueryItem {

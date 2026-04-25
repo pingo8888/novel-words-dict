@@ -263,9 +263,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
   font-size: 12px;
   font-weight: 500;
-  line-height: 1;
+  line-height: 18px;
   user-select: none;
   box-shadow: 1px 1px 0 #1f1f1f;
 }
@@ -304,16 +305,22 @@
 .entry-icon.gender-male {
   color: #ffffff;
   background: #1f5f9a;
+  position: relative;
+  top: -0.5px;
 }
 
 .entry-icon.gender-female {
   color: #ffffff;
   background: #b63838;
+  position: relative;
+  top: -0.5px;
 }
 
 .entry-icon.gender-both {
   color: #ffffff;
   background: #6b7280;
+  position: relative;
+  top: -0.5px;
 }
 
 .entry-item .term {

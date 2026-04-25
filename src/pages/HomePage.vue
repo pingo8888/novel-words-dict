@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { Lock, Settings } from "lucide-vue-next";
+import GroupSuggestPanel from "./GroupSuggestPanel.vue";
 import HomeSettingsDialog from "./HomeSettingsDialog.vue";
 import UpdateConfirmDialog from "./UpdateConfirmDialog.vue";
 import { useHomePage } from "./useHomePage";
@@ -10,17 +11,30 @@ const {
   acceptUpdateConfirm,
   appVersion,
   cancelUpdateConfirm,
+  clearKeyword,
   closeSettings,
   dictionaries,
   filters,
   formatGroupLabel,
   getGenderIconClass,
   getNameTypeIcons,
+  groupSuggestPage,
+  groupSuggestPageCount,
+  groupSuggestPageItems,
+  groupSuggestSelectedIndex,
+  groupSuggestVisible,
+  handleKeywordBlur,
+  handleKeywordClick,
+  handleKeywordInput,
+  handleKeywordKeydown,
+  handleKeywordKeyup,
   handleEntryClick,
   handleResultWheel,
+  keywordInputRef,
   loading,
   isGenderFilterEditable,
   nextPage,
+  nextGroupSuggestPage,
   notifyOpenDirFailed,
   openEditor,
   openSettings,
@@ -32,7 +46,9 @@ const {
   queryButtonLoading,
   renderItems,
   result,
+  prevGroupSuggestPage,
   saveSettings,
+  selectGroupSuggestion,
   settingsForm,
   settingsSaving,
   settingsVisible,
@@ -126,21 +142,36 @@ watch(settingsVisible, (visible) => {
           <span>关键字</span>
           <div class="keyword-input-wrap">
             <input
+              ref="keywordInputRef"
               v-model="filters.keyword"
               type="text"
               maxlength="120"
               placeholder="输入关键字，多个关键字空格分隔；匹配分组请加@前缀"
-              @keyup.enter="query(true)"
+              @input="handleKeywordInput"
+              @click="handleKeywordClick"
+              @blur="handleKeywordBlur"
+              @keyup="handleKeywordKeyup"
+              @keydown="handleKeywordKeydown"
             />
             <button
               v-if="filters.keyword.length > 0"
               type="button"
               class="keyword-clear-btn"
               aria-label="清空关键字"
-              @click="filters.keyword = ''"
+              @click="clearKeyword"
             >
               ×
             </button>
+            <GroupSuggestPanel
+              v-if="groupSuggestVisible"
+              :items="groupSuggestPageItems"
+              :page="groupSuggestPage"
+              :page-count="groupSuggestPageCount"
+              :selected-index="groupSuggestSelectedIndex"
+              @select="selectGroupSuggestion"
+              @prev-page="prevGroupSuggestPage"
+              @next-page="nextGroupSuggestPage"
+            />
           </div>
         </label>
 
@@ -211,7 +242,7 @@ watch(settingsVisible, (visible) => {
       </section>
     </div>
     <div class="action-hints">
-      <p class="action-hints-left">　复制：[左键]　编辑：[右键]　查词：[Ctrl+左键]　添加：[{{ activeHotkey }}]</p>
+      <p class="action-hints-left">复制：[左键]  编辑：[右键]  查词：[Ctrl+左键]  添加：[{{ activeHotkey }}]</p>
       <p class="action-hints-right">版本：{{ appVersion || "-" }}</p>
     </div>
     <p v-if="toastMessage" class="system-tip floating-system-tip" :class="`tone-${toastTone}`">

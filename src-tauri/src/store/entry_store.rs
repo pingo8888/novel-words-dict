@@ -9,7 +9,7 @@ use tauri::AppHandle;
 use crate::core::filter::{
     matches_gender_type_filter, matches_genre_filter, matches_name_type_filter,
 };
-use crate::core::text::make_term_key;
+use crate::core::text::{make_term_key, normalize_text};
 use crate::core::types::{DictionaryOption, GenderType, GenreType, NameEntry, NameType};
 use crate::infra::files::{
     collect_json_files, is_bundled_dict_order_file, is_custom_entries_file,
@@ -23,7 +23,7 @@ use crate::{
 };
 
 use super::dictionary::DictionaryData;
-use super::query::{QueryRequest, QueryResponse};
+use super::query::{GroupSuggestionRequest, QueryRequest, QueryResponse};
 
 const CUSTOM_DB_SCHEMA: &str = r#"
 CREATE TABLE IF NOT EXISTS custom_entries (
@@ -53,6 +53,16 @@ fn compare_query_item_refs(
     b: &&super::query::QueryItem,
 ) -> std::cmp::Ordering {
     compare_query_items(a, b)
+}
+
+fn compare_group_names(a: &str, b: &str) -> std::cmp::Ordering {
+    let left = crate::core::sort::build_term_sort_key(a);
+    let right = crate::core::sort::build_term_sort_key(b);
+    left.bucket
+        .cmp(&right.bucket)
+        .then_with(|| left.initial.cmp(&right.initial))
+        .then_with(|| left.pinyin.cmp(&right.pinyin))
+        .then_with(|| a.cmp(b))
 }
 
 fn name_type_to_str(value: NameType) -> &'static str {
@@ -298,6 +308,80 @@ impl EntryStore {
             page,
             page_count,
         }
+    }
+
+    pub(crate) fn query_group_suggestions(&self, request: &GroupSuggestionRequest) -> Vec<String> {
+        let dict_filter = request
+            .dict_id
+            .as_deref()
+            .unwrap_or(ALL_DICT_ID)
+            .trim()
+            .to_ascii_lowercase();
+        let genre_type = request
+            .genre_type
+            .as_deref()
+            .unwrap_or("all")
+            .trim()
+            .to_ascii_lowercase();
+        let name_type = request
+            .name_type
+            .as_deref()
+            .unwrap_or("all")
+            .trim()
+            .to_ascii_lowercase();
+        let mut gender_type = request
+            .gender_type
+            .as_deref()
+            .unwrap_or("all")
+            .trim()
+            .to_ascii_lowercase();
+        if name_type != "surname" && name_type != "given" {
+            gender_type = "all".to_string();
+        }
+        let keyword = normalize_text(request.keyword.as_deref().unwrap_or("").trim());
+
+        let matches_item = |entry: &super::query::QueryItem| {
+            !entry.group.trim().is_empty()
+                && matches_genre_filter(&genre_type, entry.genre)
+                && matches_name_type_filter(&name_type, entry.name_type)
+                && matches_gender_type_filter(&gender_type, entry.gender_type)
+                && (keyword.is_empty() || entry.group_norm.contains(&keyword))
+        };
+
+        let mut seen = HashSet::new();
+        let mut groups = Vec::new();
+        let mut collect_group = |entry: &super::query::QueryItem| {
+            if !matches_item(entry) {
+                return;
+            }
+            let group = entry.group.trim();
+            let key = normalize_text(group);
+            if seen.insert(key) {
+                groups.push(group.to_string());
+            }
+        };
+
+        if dict_filter.eq_ignore_ascii_case(ALL_DICT_ID) {
+            for entry in &self.custom.query_items {
+                collect_group(entry);
+            }
+            for dict in &self.bundled {
+                for entry in &dict.query_items {
+                    if self.custom_term_keys.contains(&entry.term_key) {
+                        continue;
+                    }
+                    collect_group(entry);
+                }
+            }
+        } else {
+            let selected_dict = self.select_dictionary(dict_filter.as_str());
+            for entry in &selected_dict.query_items {
+                collect_group(entry);
+            }
+        }
+
+        groups.sort_by(|a, b| compare_group_names(a, b));
+        groups
     }
 
     pub(crate) fn get_entry(&self, term: &str) -> Option<NameEntry> {

@@ -5,7 +5,7 @@ use serde::Serialize;
 
 use crate::app::state::{AppState, LastAddPreset, LastAddPresetState};
 use crate::core::types::{DictionaryOption, GenderType, GenreType, NameEntry, NameType};
-use crate::store::{QueryRequest, QueryResponse};
+use crate::store::{GroupSuggestionRequest, QueryRequest, QueryResponse};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,6 +26,18 @@ pub(crate) fn query_entries(
         .lock()
         .map_err(|_| "读取数据失败：状态锁已中毒（poisoned）".to_string())?;
     Ok(store.query(&request))
+}
+
+#[tauri::command]
+pub(crate) fn query_group_suggestions(
+    state: State<AppState>,
+    request: GroupSuggestionRequest,
+) -> Result<Vec<String>, String> {
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "读取分组失败：状态锁已中毒（poisoned）".to_string())?;
+    Ok(store.query_group_suggestions(&request))
 }
 
 #[tauri::command]

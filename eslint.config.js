@@ -46,6 +46,14 @@ export default [
     },
   },
   {
+    files: ["scripts/**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     files: ["**/*.d.ts"],
     rules: {
       "@typescript-eslint/no-empty-object-type": "off",

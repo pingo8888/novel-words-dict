@@ -11,7 +11,7 @@ use crate::app::{
     commands::{
         close_editor_window, delete_entry, get_app_settings, get_bundled_entry,
         get_bundled_entry_dict_name, get_entry, get_last_add_preset, list_dictionaries,
-        open_editor_window, query_entries, save_app_settings, set_editor_seed,
+        open_editor_window, query_entries, query_group_suggestions, save_app_settings, set_editor_seed,
         set_editor_window_title, set_hotkey_enabled, take_editor_seed, upsert_entry,
     },
     state::{
@@ -70,6 +70,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             query_entries,
+            query_group_suggestions,
             list_dictionaries,
             get_entry,
             get_bundled_entry,

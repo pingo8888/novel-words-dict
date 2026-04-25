@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "dict:clean-custom-duplicates": "node scripts/clean-custom-bundled-duplicates.mjs",
+    "dict:export-custom-to-buildin": "node scripts/export-custom-to-buildin.mjs",
     "dict:export-custom-group-to-json": "node scripts/move-custom-group-to-bundled.mjs",
     "dict:normalize-buildin-json": "node scripts/normalize-bundled-dicts.mjs",
     "dict:build-db": "node scripts/build-builtin-db.mjs",

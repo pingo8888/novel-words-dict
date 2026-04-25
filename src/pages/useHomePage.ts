@@ -117,9 +117,9 @@ export function useHomePage() {
     if (loading.value) {
       return;
     }
-    closeGroupSuggest();
 
     if (resetPage) {
+      closeGroupSuggest();
       filters.page = 1;
     }
 

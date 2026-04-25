@@ -209,6 +209,18 @@ export function useGroupSuggest({
 
   function handleKeywordKeyup(event: KeyboardEvent): void {
     if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.key === "Alt" ||
+      event.key === "Control" ||
+      event.key === "Meta" ||
+      event.key === "Shift"
+    ) {
+      return;
+    }
+    if (
       event.key === "ArrowUp" ||
       event.key === "ArrowDown" ||
       event.key === "ArrowLeft" ||
@@ -239,6 +251,9 @@ export function useGroupSuggest({
     if (event.key === "Escape") {
       event.preventDefault();
       closeGroupSuggest();
+      return;
+    }
+    if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
       return;
     }
     if (event.key === "ArrowLeft") {

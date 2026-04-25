@@ -3,8 +3,12 @@
 {"term":"《渡水者之歌》","group":"安珀志","nameType":"others","genderType":"both","genre":"west"},
 {"term":"阿尔丁森林","group":"安珀志","nameType":"place","genderType":"both","genre":"west"},
 {"term":"阿佛纳斯","group":"安珀志","nameType":"place","genderType":"both","genre":"west"},
+{"term":"奥森河","group":"安珀志","nameType":"place","genderType":"both","genre":"west"},
+{"term":"巴里门","group":"安珀志","nameType":"surname","genderType":"both","genre":"west"},
 {"term":"暴风犬","group":"安珀志","nameType":"creature","genderType":"both","genre":"west"},
+{"term":"德沃金","group":"安珀志","nameType":"given","genderType":"male","genre":"west"},
 {"term":"混沌之厅","group":"安珀志","nameType":"place","genderType":"both","genre":"west"},
+{"term":"伽纳斯山谷","group":"安珀志","nameType":"place","genderType":"both","genre":"west"},
 {"term":"卡巴灯塔","group":"安珀志","nameType":"place","genderType":"both","genre":"west"},
 {"term":"克威尔山","group":"安珀志","nameType":"place","genderType":"both","genre":"west"},
 {"term":"里尔神","group":"安珀志","nameType":"myth","genderType":"both","genre":"west"},
@@ -17,5 +21,6 @@
 {"term":"王座大厅","group":"安珀志","nameType":"place","genderType":"both","genre":"west"},
 {"term":"薇亚妮","group":"安珀志","nameType":"given","genderType":"female","genre":"west"},
 {"term":"影子世界","group":"安珀志","nameType":"others","genderType":"both","genre":"west"},
-{"term":"真实之城","group":"安珀志","nameType":"place","genderType":"both","genre":"west"}
+{"term":"真实之城","group":"安珀志","nameType":"place","genderType":"both","genre":"west"},
+{"term":"仲裁之石","group":"安珀志","nameType":"item","genderType":"both","genre":"west"}
 ]

@@ -196,13 +196,13 @@ onBeforeUnmount(() => {
 <template>
   <div
     v-if="visible"
-    class="settings-mask"
+    class="ui-mask settings-mask"
     @pointerdown="onMaskPointerDown"
     @click.self="onMaskClick"
   >
     <section
       ref="dialogRef"
-      class="settings-dialog"
+      class="ui-dialog settings-dialog"
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-dialog-title"
@@ -211,10 +211,10 @@ onBeforeUnmount(() => {
       @keydown="onDialogKeydown"
     >
       <div class="settings-header">
-        <h2 id="settings-dialog-title">设置</h2>
+        <h2 id="settings-dialog-title" class="ui-dialog-title">设置</h2>
         <button
           type="button"
-          class="settings-close-btn"
+          class="ui-icon-btn settings-close-btn"
           aria-label="关闭设置"
           title="关闭"
           @click="closeDialog"
@@ -225,11 +225,11 @@ onBeforeUnmount(() => {
       <p id="settings-dialog-desc" class="settings-desc">
         查看词库保存目录、修改快捷键和搜索设置，按 Esc 可关闭对话框。
       </p>
-      <div class="field">
-        <span>打开自定义词库目录</span>
+      <div class="ui-field field">
+        <span class="ui-field-label">打开自定义词库目录</span>
         <div class="dict-dir-row">
           <input
-            class="dict-dir-path"
+            class="ui-control dict-dir-path"
             :value="dictDirDisplay"
             :title="dictDirDisplay"
             type="text"
@@ -237,7 +237,7 @@ onBeforeUnmount(() => {
           />
           <button
             type="button"
-            class="secondary dict-dir-open-btn"
+            class="ui-btn ui-btn-secondary dict-dir-open-btn"
             :disabled="!dictDirDisplay"
             @click="openDictDir"
           >
@@ -246,9 +246,10 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <label class="field">
-        <span>界面取词快捷键</span>
+      <label class="ui-field field">
+        <span class="ui-field-label">界面取词快捷键</span>
         <input
+          class="ui-control"
           v-model="hotkeyModel"
           type="text"
           maxlength="16"
@@ -261,28 +262,28 @@ onBeforeUnmount(() => {
         <small>支持：Alt+键、Ctrl+Alt+键（例如 Alt+D、Ctrl+Alt+D）。</small>
       </label>
 
-      <label class="field">
-        <span>Ctrl+左键搜索引擎</span>
-        <select v-model="searchEngineModel">
+      <label class="ui-field field">
+        <span class="ui-field-label">Ctrl+左键搜索引擎</span>
+        <select v-model="searchEngineModel" class="ui-control">
           <option value="google">Google</option>
           <option value="bing">Bing</option>
           <option value="baidu">Baidu</option>
         </select>
       </label>
 
-      <div class="settings-actions">
+      <div class="ui-actions settings-actions">
         <button
           type="button"
-          class="secondary check-update"
+          class="ui-btn ui-btn-primary check-update"
           :disabled="settingsSaving || updateChecking"
           @click="emit('checkUpdate')"
         >
           {{ updateChecking ? "检查中..." : "检查更新" }}
         </button>
-        <button type="button" class="secondary" @click="closeDialog">
+        <button type="button" class="ui-btn ui-btn-secondary" @click="closeDialog">
           取消
         </button>
-        <button type="button" class="primary" :disabled="settingsSaving" @click="emit('save')">
+        <button type="button" class="ui-btn ui-btn-primary" :disabled="settingsSaving" @click="emit('save')">
           {{ settingsSaving ? "保存中..." : "保存" }}
         </button>
       </div>

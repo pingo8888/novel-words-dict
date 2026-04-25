@@ -15,11 +15,11 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background: #f7f4ed;
-  border: 2px solid #1f1f1f;
+  background: var(--ui-paper);
+  border: 2px solid var(--ui-border);
   border-radius: 0;
   padding: 14px;
-  box-shadow: 4px 4px 0 #1f1f1f;
+  box-shadow: var(--ui-shadow-panel);
   width: calc(100% - 4px);
   height: calc(100% - 4px);
   box-sizing: border-box;
@@ -39,38 +39,12 @@
   margin: 0;
   font-size: 22px;
   font-weight: 600;
-  color: #111827;
+  color: var(--ui-ink-strong);
 }
 
 .editor-close-btn {
-  width: 28px;
-  height: 28px;
-  border: 2px solid #1f1f1f;
-  border-radius: 2px;
-  background: #fffefb;
-  color: #1f2937;
   font-size: 18px;
   line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  box-shadow: 2px 2px 0 #1c1c1c;
-}
-
-.editor-close-btn:hover {
-  background: #f8f4e8;
-}
-
-.editor-close-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #1c1c1c;
-}
-
-.editor-close-btn:focus-visible {
-  outline: 2px solid #1f2937;
-  outline-offset: 0;
 }
 
 .form-grid {
@@ -84,32 +58,14 @@
 }
 
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
   font-size: 14px;
   font-weight: 500;
 }
 
-.field span {
-  user-select: none;
-}
-
-.field input,
-.field select {
-  border: 1px solid #202020;
-  border-radius: 4px;
+.field .ui-control {
+  height: auto;
+  min-height: 36px;
   padding: 8px 10px;
-  font-size: 14px;
-  color: #111827;
-  background: #fffefb;
-}
-
-.field input:focus,
-.field select:focus {
-  outline: 2px solid #1f2937;
-  outline-offset: 0;
-  border-color: #1f2937;
 }
 
 .actions {
@@ -138,147 +94,40 @@
   max-width: 260px;
 }
 
-.actions button {
+.actions .ui-btn {
   min-width: 92px;
-  border: 2px solid #1f1f1f;
-  border-radius: 2px;
+  height: auto;
   padding: 9px 16px;
   font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 2px 2px 0 #1c1c1c;
-}
-
-.actions button:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-  box-shadow: none;
-}
-
-.actions .secondary {
-  color: #1f2937;
-  background: #fffefb;
-}
-
-.actions .primary {
-  color: #ffffff;
-  background: #0f7a47;
-}
-
-.actions .danger {
-  color: #ffffff;
-  background: #b63838;
-}
-
-.actions button:hover:not(:disabled) {
-  filter: brightness(0.95);
-}
-
-.actions button:active:not(:disabled) {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #1c1c1c;
-}
-
-.confirm-mask {
-  position: absolute;
-  inset: 0;
-  background: rgba(30, 30, 30, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
 }
 
 .confirm-dialog {
   width: min(380px, calc(100% - 32px));
-  border: 2px solid #1f1f1f;
-  border-radius: 2px;
-  background: #f7f4ed;
-  box-shadow: 4px 4px 0 #1f1f1f;
   padding: 14px;
 }
 
 .confirm-dialog h2 {
-  margin: 0;
   font-size: 16px;
-  color: #111827;
 }
 
 .confirm-dialog p {
-  margin: 10px 0 0;
-  font-size: 13px;
-  color: #374151;
+  line-height: 1.5;
 }
 
 .confirm-actions {
   margin-top: 14px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 
-.confirm-actions button {
+.confirm-actions .ui-btn {
   min-width: 92px;
-  border: 2px solid #1f1f1f;
-  border-radius: 2px;
+  height: auto;
   padding: 9px 16px;
   font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 2px 2px 0 #1c1c1c;
-}
-
-.confirm-actions button:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-  box-shadow: none;
-}
-
-.confirm-actions .secondary {
-  color: #1f2937;
-  background: #fffefb;
-}
-
-.confirm-actions .danger {
-  color: #ffffff;
-  background: #b63838;
-}
-
-.confirm-actions button:hover:not(:disabled) {
-  filter: brightness(0.95);
-}
-
-.confirm-actions button:active:not(:disabled) {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #1c1c1c;
 }
 
 .system-tip {
   position: absolute;
   top: 10px;
   right: 14px;
-  margin: 0;
-  padding: 6px 14px;
-  border-radius: 2px;
-  border: 2px solid #1f1f1f;
-  background: #fffefb;
-  color: #1f2937;
-  font-size: 13px;
-  font-weight: 600;
-  pointer-events: none;
   z-index: 30;
-  box-shadow: 2px 2px 0 #1c1c1c;
-  user-select: none;
-}
-
-.system-tip.tone-info {
-  border-color: #1f1f1f;
-  background: #fffefb;
-  color: #1f2937;
-}
-
-.system-tip.tone-error {
-  border-color: #1f1f1f;
-  background: #b63838;
-  color: #ffffff;
 }

@@ -80,25 +80,25 @@ watch(settingsVisible, (visible) => {
           总词条数：[{{ result.totalAll }}]
         </p>
         <div class="top-row-actions">
-          <button class="settings-icon-btn" type="button" title="设置" @click="openSettings">
+          <button class="ui-icon-btn settings-icon-btn" type="button" title="设置" @click="openSettings">
             <Settings :size="16" :stroke-width="2" />
           </button>
         </div>
       </div>
 
       <section class="filters">
-        <label class="field">
-          <span>词库</span>
-          <select v-model="filters.dictId">
+        <label class="ui-field field">
+          <span class="ui-field-label">词库</span>
+          <select v-model="filters.dictId" class="ui-control">
             <option v-for="item in dictionaries" :key="item.id" :value="item.id">
               {{ item.name }}
             </option>
           </select>
         </label>
 
-        <label class="field">
-          <span>风格</span>
-          <select v-model="filters.genreType">
+        <label class="ui-field field">
+          <span class="ui-field-label">风格</span>
+          <select v-model="filters.genreType" class="ui-control">
             <option value="all">所有</option>
             <option value="china">中国</option>
             <option value="japan">日本</option>
@@ -106,9 +106,9 @@ watch(settingsVisible, (visible) => {
           </select>
         </label>
 
-        <label class="field">
-          <span>名词类型</span>
-          <select v-model="filters.nameType">
+        <label class="ui-field field">
+          <span class="ui-field-label">名词类型</span>
+          <select v-model="filters.nameType" class="ui-control">
             <option value="all">所有</option>
             <option value="surname">姓氏</option>
             <option value="given">名字</option>
@@ -129,19 +129,20 @@ watch(settingsVisible, (visible) => {
           </select>
         </label>
 
-        <label class="field">
-          <span>性别</span>
-          <select v-model="filters.genderType" :disabled="!isGenderFilterEditable">
+        <label class="ui-field field">
+          <span class="ui-field-label">性别</span>
+          <select v-model="filters.genderType" class="ui-control" :disabled="!isGenderFilterEditable">
             <option value="all">所有</option>
             <option value="male">男性</option>
             <option value="female">女性</option>
           </select>
         </label>
 
-        <label class="field keyword">
-          <span>关键字</span>
+        <label class="ui-field field keyword">
+          <span class="ui-field-label">关键字</span>
           <div class="keyword-input-wrap">
             <input
+              class="ui-control"
               ref="keywordInputRef"
               v-model="filters.keyword"
               type="text"
@@ -175,7 +176,7 @@ watch(settingsVisible, (visible) => {
           </div>
         </label>
 
-        <button class="query-btn" type="button" :disabled="queryButtonLoading" @click="query(true)">
+        <button class="ui-btn ui-btn-primary query-btn" type="button" :disabled="queryButtonLoading" @click="query(true)">
           {{ queryButtonLoading ? "查询中..." : "查询" }}
         </button>
       </section>
@@ -227,11 +228,12 @@ watch(settingsVisible, (visible) => {
         </div>
 
         <div class="pagination">
-          <button type="button" :disabled="loading || filters.page <= 1" @click="prevPage">
+          <button class="ui-btn ui-btn-primary" type="button" :disabled="loading || filters.page <= 1" @click="prevPage">
             上一页
           </button>
           <span>{{ pageDisplay }}</span>
           <button
+            class="ui-btn ui-btn-primary"
             type="button"
             :disabled="loading || filters.page >= result.pageCount"
             @click="nextPage"
@@ -245,7 +247,7 @@ watch(settingsVisible, (visible) => {
       <p class="action-hints-left">复制：[左键]  编辑：[右键]  查词：[Ctrl+左键]  添加：[{{ activeHotkey }}]</p>
       <p class="action-hints-right">版本：{{ appVersion || "-" }}</p>
     </div>
-    <p v-if="toastMessage" class="system-tip floating-system-tip" :class="`tone-${toastTone}`">
+    <p v-if="toastMessage" class="ui-system-tip system-tip floating-system-tip" :class="`tone-${toastTone}`">
       {{ toastMessage }}
     </p>
     <p

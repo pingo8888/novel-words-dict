@@ -2,7 +2,7 @@
   box-sizing: border-box;
   height: 100vh;
   padding: 20px 24px;
-  background: #f7f4ed;
+  background: var(--ui-paper);
   color: var(--ink-main);
   display: flex;
   flex-direction: column;
@@ -42,69 +42,20 @@
   min-width: 0;
 }
 
-.settings-icon-btn {
-  width: 28px;
-  height: 28px;
-  border: 2px solid #1f1f1f;
-  border-radius: 2px;
-  background: #fffefb;
-  color: #1f2937;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex: 0 0 auto;
-  padding: 0;
-  box-shadow: 2px 2px 0 #1c1c1c;
-}
-
-.settings-icon-btn:hover {
-  background: #f8f4e8;
-}
-
-.settings-icon-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #1c1c1c;
-}
-
-.settings-icon-btn:focus-visible {
-  outline: 2px solid #1f2937;
-  outline-offset: 0;
-}
-
 .filters {
   display: grid;
   grid-template-columns: 150px 150px 150px 150px minmax(220px, 1fr) 110px;
   gap: 10px;
   align-items: end;
   margin: 0 12px;
-  background: #f8f4e8;
+  background: var(--ui-surface-soft);
   border: 2px solid #242424;
-  border-radius: 2px;
+  border-radius: var(--ui-radius);
   padding: 12px;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field span {
-  font-size: 12px;
-  font-weight: 600;
+.filters .ui-field-label {
   color: #334155;
-}
-
-.field select,
-.field input {
-  border: 1px solid #202020;
-  border-radius: 4px;
-  height: 36px;
-  padding: 0 10px;
-  font-size: 14px;
-  color: #0f172a;
-  background: #fffefb;
 }
 
 .keyword-input-wrap {
@@ -136,38 +87,9 @@
   padding: 0;
 }
 
-.field select:focus,
-.field input:focus {
-  outline: 2px solid #1f2937;
-  outline-offset: 0;
-  border-color: #1f2937;
-}
-
 .query-btn {
-  border: 2px solid #1c1c1c;
-  border-radius: 2px;
   height: 36px;
   font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-  background: #12804b;
-  cursor: pointer;
-  box-shadow: 2px 2px 0 #1c1c1c;
-}
-
-.query-btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.query-btn:hover:not(:disabled) {
-  background: #0f6d40;
-}
-
-.query-btn:active:not(:disabled) {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #1c1c1c;
 }
 
 .result-panel {
@@ -210,8 +132,8 @@
   min-height: 94px;
   border: 2px solid #242424;
   border-radius: 2px;
-  background: #f8f4e8;
-  box-shadow: 2px 2px 0 #1f1f1f;
+  background: var(--ui-surface-soft);
+  box-shadow: 2px 2px 0 var(--ui-border);
   color: #1b1b1b;
   padding: 12px;
   position: relative;
@@ -226,11 +148,11 @@
 
 .entry-item:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #1f1f1f;
+  box-shadow: 1px 1px 0 var(--ui-border);
 }
 
 .entry-item:hover {
-  background: #fffefb;
+  background: var(--ui-surface);
 }
 
 .entry-main {
@@ -257,8 +179,8 @@
   width: 18px;
   height: 18px;
   border-radius: 2px;
-  border: 1px solid #1f1f1f;
-  background: #fffefb;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
   color: #1f2937;
   display: inline-flex;
   align-items: center;
@@ -268,7 +190,7 @@
   font-weight: 500;
   line-height: 18px;
   user-select: none;
-  box-shadow: 1px 1px 0 #1f1f1f;
+  box-shadow: 1px 1px 0 var(--ui-border);
 }
 
 .entry-lucide {
@@ -354,51 +276,13 @@
 }
 
 .pagination button {
-  border: 2px solid #1f1f1f;
-  border-radius: 2px;
-  background: #0f7a47;
-  color: #ffffff;
   min-width: 84px;
-  height: 34px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 2px 2px 0 #1c1c1c;
-}
-
-.pagination button:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.pagination button:hover:not(:disabled) {
-  background: #0d6a3f;
-}
-
-.pagination button:active:not(:disabled) {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #1c1c1c;
 }
 
 .pagination span {
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
-}
-
-.system-tip {
-  margin: 0;
-  padding: 6px 14px;
-  border-radius: 2px;
-  border: 2px solid #1f1f1f;
-  background: #fffefb;
-  color: #1f2937;
-  font-size: 13px;
-  font-weight: 600;
-  pointer-events: none;
-  box-shadow: 2px 2px 0 #1c1c1c;
-  user-select: none;
 }
 
 .floating-system-tip {
@@ -411,18 +295,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.system-tip.tone-info {
-  border-color: #1f1f1f;
-  background: #fffefb;
-  color: #1f2937;
-}
-
-.system-tip.tone-error {
-  border-color: #1f1f1f;
-  background: #b63838;
-  color: #ffffff;
 }
 
 .sr-only {

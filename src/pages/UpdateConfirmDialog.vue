@@ -68,13 +68,13 @@ watch(
 <template>
   <div
     v-if="visible"
-    class="update-confirm-mask"
+    class="ui-mask update-confirm-mask"
     @pointerdown="onMaskPointerDown"
     @click.self="onMaskClick"
   >
     <section
       ref="dialogRef"
-      class="update-confirm-dialog"
+      class="ui-dialog update-confirm-dialog"
       role="dialog"
       aria-modal="true"
       aria-labelledby="update-confirm-title"
@@ -82,13 +82,13 @@ watch(
       tabindex="-1"
       @keydown="onDialogKeydown"
     >
-      <h2 id="update-confirm-title">{{ title }}</h2>
-      <p id="update-confirm-desc">{{ message }}</p>
-      <div class="update-confirm-actions">
-        <button type="button" class="secondary" @click="emit('cancel')">
+      <h2 id="update-confirm-title" class="ui-dialog-title">{{ title }}</h2>
+      <p id="update-confirm-desc" class="ui-dialog-body">{{ message }}</p>
+      <div class="ui-actions update-confirm-actions">
+        <button type="button" class="ui-btn ui-btn-secondary" @click="emit('cancel')">
           {{ cancelText }}
         </button>
-        <button type="button" class="primary" @click="emit('confirm')">
+        <button type="button" class="ui-btn ui-btn-primary" @click="emit('confirm')">
           {{ confirmText }}
         </button>
       </div>

@@ -96,7 +96,7 @@ watch(editorFocusNonce, async () => {
         <h1 data-tauri-drag-region>{{ editorTitle }}</h1>
         <button
           type="button"
-          class="editor-close-btn"
+          class="ui-icon-btn editor-close-btn"
           aria-label="关闭编辑窗口"
           title="关闭"
           @click="closeWindow"
@@ -106,9 +106,10 @@ watch(editorFocusNonce, async () => {
       </div>
 
       <div class="form-grid">
-        <label class="field full">
-          <span>词条</span>
+        <label class="ui-field field full">
+          <span class="ui-field-label">词条</span>
           <input
+            class="ui-control"
             ref="termInputRef"
             v-model="form.term"
             type="text"
@@ -117,18 +118,19 @@ watch(editorFocusNonce, async () => {
           />
         </label>
 
-        <label class="field">
-          <span>风格</span>
-          <select v-model="form.genre">
+        <label class="ui-field field">
+          <span class="ui-field-label">风格</span>
+          <select v-model="form.genre" class="ui-control">
             <option value="china">中国</option>
             <option value="japan">日本</option>
             <option value="west">西方</option>
           </select>
         </label>
 
-        <label class="field">
-          <span>分组</span>
+        <label class="ui-field field">
+          <span class="ui-field-label">分组</span>
           <input
+            class="ui-control"
             v-model="form.group"
             type="text"
             maxlength="120"
@@ -136,9 +138,9 @@ watch(editorFocusNonce, async () => {
           />
         </label>
 
-        <label class="field">
-          <span>名词类型</span>
-          <select v-model="form.nameType">
+        <label class="ui-field field">
+          <span class="ui-field-label">名词类型</span>
+          <select v-model="form.nameType" class="ui-control">
             <option value="surname">姓氏</option>
             <option value="given">名字</option>
             <option value="place">地名</option>
@@ -158,9 +160,9 @@ watch(editorFocusNonce, async () => {
           </select>
         </label>
 
-        <label class="field">
-          <span>性别类型</span>
-          <select v-model="form.genderType" :disabled="!isGenderTypeEditable">
+        <label class="ui-field field">
+          <span class="ui-field-label">性别类型</span>
+          <select v-model="form.genderType" class="ui-control" :disabled="!isGenderTypeEditable">
             <option value="both">通用</option>
             <option value="male">男性</option>
             <option value="female">女性</option>
@@ -175,7 +177,7 @@ watch(editorFocusNonce, async () => {
           </p>
           <button
             v-if="editingTerm"
-            class="danger"
+            class="ui-btn ui-btn-danger"
             type="button"
             :disabled="deleting || saving"
             @click="requestDeleteEntry"
@@ -184,8 +186,8 @@ watch(editorFocusNonce, async () => {
           </button>
         </div>
         <div class="actions-right">
-          <button class="secondary" type="button" :disabled="deleting" @click="closeWindow">取消</button>
-          <button class="primary" type="button" :disabled="saving || deleting" @click="saveEntry">
+          <button class="ui-btn ui-btn-secondary" type="button" :disabled="deleting" @click="closeWindow">取消</button>
+          <button class="ui-btn ui-btn-primary" type="button" :disabled="saving || deleting" @click="saveEntry">
             {{ saving ? "保存中..." : "确定" }}
           </button>
         </div>
@@ -195,12 +197,12 @@ watch(editorFocusNonce, async () => {
 
     <div
       v-if="deleteConfirmVisible"
-      class="confirm-mask"
+      class="ui-mask confirm-mask"
       @click.self="closeDeleteConfirm"
     >
       <section
         ref="confirmDialogRef"
-        class="confirm-dialog"
+        class="ui-dialog confirm-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-confirm-title"
@@ -208,20 +210,20 @@ watch(editorFocusNonce, async () => {
         tabindex="-1"
         @keydown="onConfirmKeydown"
       >
-        <h2 id="delete-confirm-title">确认删除</h2>
-        <p id="delete-confirm-desc">确定删除词条：{{ editingTerm }}？</p>
-        <div class="confirm-actions">
-          <button type="button" class="secondary" :disabled="deleting" @click="closeDeleteConfirm">
+        <h2 id="delete-confirm-title" class="ui-dialog-title">确认删除</h2>
+        <p id="delete-confirm-desc" class="ui-dialog-body">确定删除词条：{{ editingTerm }}？</p>
+        <div class="ui-actions confirm-actions">
+          <button type="button" class="ui-btn ui-btn-secondary" :disabled="deleting" @click="closeDeleteConfirm">
             取消
           </button>
-          <button type="button" class="danger" :disabled="deleting" @click="deleteEntry">
+          <button type="button" class="ui-btn ui-btn-danger" :disabled="deleting" @click="deleteEntry">
             {{ deleting ? "删除中..." : "确认删除" }}
           </button>
         </div>
       </section>
     </div>
 
-    <p v-if="toastMessage" class="system-tip" :class="`tone-${toastTone}`">{{ toastMessage }}</p>
+    <p v-if="toastMessage" class="ui-system-tip system-tip" :class="`tone-${toastTone}`">{{ toastMessage }}</p>
   </main>
 </template>
 

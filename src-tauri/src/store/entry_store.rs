@@ -160,6 +160,47 @@ impl DictSourceKeyword {
     }
 }
 
+fn genre_keyword_filter(token: &str) -> Option<&'static str> {
+    match token {
+        "china" | "east" | "中国" | "东方" => Some("china"),
+        "japan" | "日本" => Some("japan"),
+        "west" | "西方" => Some("west"),
+        _ => None,
+    }
+}
+
+fn name_type_keyword_filter(token: &str) -> Option<&'static str> {
+    match token {
+        "surname" | "姓氏" => Some("surname"),
+        "given" | "名字" => Some("given"),
+        "place" | "地名" => Some("place"),
+        "myth" | "神话" => Some("myth"),
+        "people" | "人物" => Some("people"),
+        "creature" | "生物" => Some("creature"),
+        "monster" | "怪物" => Some("monster"),
+        "gear" | "装备" => Some("gear"),
+        "food" | "食物" => Some("food"),
+        "item" | "items" | "物品" => Some("item"),
+        "skill" | "技能" => Some("skill"),
+        "faction" | "势力" => Some("faction"),
+        "title" | "头衔" => Some("title"),
+        "nickname" | "绰号" => Some("nickname"),
+        "book" | "书籍" => Some("book"),
+        "others" | "other" | "incantation" | "其他" => Some("others"),
+        "both" => Some("both"),
+        _ => None,
+    }
+}
+
+fn gender_keyword_filter(token: &str) -> Option<&'static str> {
+    match token {
+        "男性" => Some("male"),
+        "女性" => Some("female"),
+        "通用" => Some("both"),
+        _ => None,
+    }
+}
+
 #[derive(Default)]
 pub(crate) struct EntryStore {
     pub(crate) custom: DictionaryData,
@@ -225,6 +266,9 @@ impl EntryStore {
         }
         let mut normal_keyword_tokens: Vec<String> = Vec::new();
         let mut group_keyword_tokens: Vec<String> = Vec::new();
+        let mut genre_keyword_filters: Vec<&'static str> = Vec::new();
+        let mut name_type_keyword_filters: Vec<&'static str> = Vec::new();
+        let mut gender_keyword_filters: Vec<&'static str> = Vec::new();
         let mut dict_source_keyword = DictSourceKeyword::Any;
         for raw_token in request.keyword.as_deref().unwrap_or("").split_whitespace() {
             let token = raw_token.to_lowercase();
@@ -249,6 +293,18 @@ impl EntryStore {
                 }
                 continue;
             }
+            if let Some(filter) = genre_keyword_filter(token.as_str()) {
+                genre_keyword_filters.push(filter);
+                continue;
+            }
+            if let Some(filter) = name_type_keyword_filter(token.as_str()) {
+                name_type_keyword_filters.push(filter);
+                continue;
+            }
+            if let Some(filter) = gender_keyword_filter(token.as_str()) {
+                gender_keyword_filters.push(filter);
+                continue;
+            }
             normal_keyword_tokens.push(token);
         }
 
@@ -256,13 +312,19 @@ impl EntryStore {
             matches_genre_filter(&genre_type, entry.genre)
                 && matches_name_type_filter(&name_type, entry.name_type)
                 && matches_gender_type_filter(&gender_type, entry.gender_type)
+                && genre_keyword_filters
+                    .iter()
+                    .all(|filter| matches_genre_filter(filter, entry.genre))
+                && name_type_keyword_filters
+                    .iter()
+                    .all(|filter| matches_name_type_filter(filter, entry.name_type))
+                && gender_keyword_filters
+                    .iter()
+                    .all(|filter| matches_gender_type_filter(filter, entry.gender_type))
                 && (normal_keyword_tokens.is_empty()
-                    || normal_keyword_tokens.iter().all(|token| {
-                        entry.term_norm.contains(token)
-                            || entry.name_type_norm.contains(token)
-                            || entry.gender_type_norm.contains(token)
-                            || entry.genre_norm.contains(token)
-                    }))
+                    || normal_keyword_tokens
+                        .iter()
+                        .all(|token| entry.term_norm.contains(token)))
                 && (group_keyword_tokens.is_empty()
                     || group_keyword_tokens
                         .iter()

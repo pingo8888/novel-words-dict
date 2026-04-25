@@ -41,12 +41,6 @@ pub(crate) struct QueryItem {
     #[serde(skip_serializing)]
     pub(crate) group_norm: String,
     #[serde(skip_serializing)]
-    pub(crate) name_type_norm: String,
-    #[serde(skip_serializing)]
-    pub(crate) gender_type_norm: String,
-    #[serde(skip_serializing)]
-    pub(crate) genre_norm: String,
-    #[serde(skip_serializing)]
     pub(crate) sort_bucket: u8,
     #[serde(skip_serializing)]
     pub(crate) sort_initial: Option<char>,

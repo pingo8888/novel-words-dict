@@ -2,48 +2,10 @@ use std::collections::HashMap;
 
 use crate::core::sort::build_term_sort_key;
 use crate::core::text::{make_term_key, normalize_text};
-use crate::core::types::{GenderType, GenreType, NameEntry, NameType};
+use crate::core::types::NameEntry;
 use crate::{CUSTOM_DICT_ID, CUSTOM_DICT_NAME};
 
 use super::query::QueryItem;
-
-fn name_type_search_text(value: NameType) -> &'static str {
-    match value {
-        NameType::Both => "both 姓氏 名字",
-        NameType::Surname => "surname 姓氏",
-        NameType::Given => "given 名字",
-        NameType::Place => "place 地名",
-        NameType::Myth => "myth 神话",
-        NameType::People => "people 人物",
-        NameType::Creature => "creature 生物",
-        NameType::Monster => "monster 怪物",
-        NameType::Gear => "gear 装备",
-        NameType::Food => "food 食物",
-        NameType::Item => "item 物品",
-        NameType::Skill => "skill 技能",
-        NameType::Faction => "faction 势力",
-        NameType::Title => "title 头衔",
-        NameType::Nickname => "nickname 绰号",
-        NameType::Book => "book 书籍",
-        NameType::Others => "others 其他",
-    }
-}
-
-fn gender_type_search_text(value: GenderType) -> &'static str {
-    match value {
-        GenderType::Male => "男性",
-        GenderType::Female => "女性",
-        GenderType::Both => "通用",
-    }
-}
-
-fn genre_search_text(value: GenreType) -> &'static str {
-    match value {
-        GenreType::China => "china 中国 东方",
-        GenreType::Japan => "japan 日本",
-        GenreType::West => "西方",
-    }
-}
 
 #[derive(Debug, Clone)]
 pub(crate) struct DictionaryData {
@@ -113,9 +75,6 @@ impl DictionaryData {
                 editable: self.editable,
                 term_norm: normalize_text(&entry.term),
                 group_norm: normalize_text(&entry.group),
-                name_type_norm: normalize_text(name_type_search_text(entry.name_type)),
-                gender_type_norm: normalize_text(gender_type_search_text(entry.gender_type)),
-                genre_norm: normalize_text(genre_search_text(entry.genre)),
                 sort_bucket: sort_key.bucket,
                 sort_initial: sort_key.initial,
                 sort_pinyin: sort_key.pinyin,

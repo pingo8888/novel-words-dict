@@ -80,7 +80,6 @@ fn normalize_lexically(path: &Path) -> PathBuf {
     normalized
 }
 
-
 pub(crate) fn resolve_bundled_dict_dir_candidates<R: tauri::Runtime>(
     app: &AppHandle<R>,
 ) -> Vec<PathBuf> {

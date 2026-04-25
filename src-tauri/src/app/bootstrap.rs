@@ -10,9 +10,7 @@ use crate::infra::paths::{
     resolve_custom_db_path, resolve_entries_file_path, resolve_project_data_dir,
     sanitize_windows_verbatim_prefix, sync_bundled_db_to_install_dir,
 };
-use crate::infra::settings::{
-    load_app_settings, persist_app_settings, should_persist_settings,
-};
+use crate::infra::settings::{load_app_settings, persist_app_settings, should_persist_settings};
 
 pub(crate) fn setup_app<R: tauri::Runtime>(
     app: &mut tauri::App<R>,

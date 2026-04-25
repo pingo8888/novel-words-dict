@@ -141,6 +141,25 @@ fn parse_genre_type(value: &str) -> GenreType {
     }
 }
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum DictSourceKeyword {
+    Any,
+    Custom,
+    Bundled,
+    Conflict,
+}
+
+impl DictSourceKeyword {
+    fn with_token(self, token: DictSourceKeyword) -> Self {
+        match (self, token) {
+            (Self::Any, next) => next,
+            (current, next) if current == next => current,
+            (Self::Conflict, _) | (_, Self::Conflict) => Self::Conflict,
+            _ => Self::Conflict,
+        }
+    }
+}
+
 #[derive(Default)]
 pub(crate) struct EntryStore {
     pub(crate) custom: DictionaryData,
@@ -159,8 +178,8 @@ impl EntryStore {
         legacy_entries_path: PathBuf,
     ) -> Result<(), String> {
         let mut custom_conn = Self::open_custom_db(custom_db_path.as_path())?;
-        let custom_entries =
-            self.load_custom_entries_with_migration(&mut custom_conn, legacy_entries_path.as_path())?;
+        let custom_entries = self
+            .load_custom_entries_with_migration(&mut custom_conn, legacy_entries_path.as_path())?;
 
         self.custom = DictionaryData::new(
             CUSTOM_DICT_ID.to_string(),
@@ -206,10 +225,23 @@ impl EntryStore {
         }
         let mut normal_keyword_tokens: Vec<String> = Vec::new();
         let mut group_keyword_tokens: Vec<String> = Vec::new();
+        let mut dict_source_keyword = DictSourceKeyword::Any;
         for raw_token in request.keyword.as_deref().unwrap_or("").split_whitespace() {
             let token = raw_token.to_lowercase();
             if token.is_empty() {
                 continue;
+            }
+            match token.as_str() {
+                "自定" => {
+                    dict_source_keyword = dict_source_keyword.with_token(DictSourceKeyword::Custom);
+                    continue;
+                }
+                "内置" => {
+                    dict_source_keyword =
+                        dict_source_keyword.with_token(DictSourceKeyword::Bundled);
+                    continue;
+                }
+                _ => {}
             }
             if let Some(group_token) = token.strip_prefix('@') {
                 if !group_token.is_empty() {
@@ -240,27 +272,52 @@ impl EntryStore {
         let mut matched: Vec<&super::query::QueryItem> = Vec::new();
         if dict_filter.eq_ignore_ascii_case(ALL_DICT_ID) {
             matched.reserve(self.total_all_cache);
-            for entry in &self.custom.query_items {
-                if matches_item(entry) {
-                    matched.push(entry);
-                }
-            }
-            for dict in &self.bundled {
-                for entry in &dict.query_items {
-                    if self.custom_term_keys.contains(&entry.term_key) {
-                        continue;
-                    }
+            if matches!(
+                dict_source_keyword,
+                DictSourceKeyword::Any | DictSourceKeyword::Custom
+            ) {
+                for entry in &self.custom.query_items {
                     if matches_item(entry) {
                         matched.push(entry);
+                    }
+                }
+            }
+            if matches!(
+                dict_source_keyword,
+                DictSourceKeyword::Any | DictSourceKeyword::Bundled
+            ) {
+                for dict in &self.bundled {
+                    for entry in &dict.query_items {
+                        if dict_source_keyword == DictSourceKeyword::Any
+                            && self.custom_term_keys.contains(&entry.term_key)
+                        {
+                            continue;
+                        }
+                        if matches_item(entry) {
+                            matched.push(entry);
+                        }
                     }
                 }
             }
         } else {
             let selected_dict = self.select_dictionary(dict_filter.as_str());
             matched.reserve(selected_dict.query_items.len());
-            for entry in &selected_dict.query_items {
-                if matches_item(entry) {
-                    matched.push(entry);
+            let source_matches = if selected_dict.id.eq_ignore_ascii_case(CUSTOM_DICT_ID) {
+                matches!(
+                    dict_source_keyword,
+                    DictSourceKeyword::Any | DictSourceKeyword::Custom
+                )
+            } else {
+                matches!(
+                    dict_source_keyword,
+                    DictSourceKeyword::Any | DictSourceKeyword::Bundled
+                )
+            };
+            if source_matches {
+                for entry in &selected_dict.query_items {
+                    if matches_item(entry) {
+                        matched.push(entry);
+                    }
                 }
             }
         }

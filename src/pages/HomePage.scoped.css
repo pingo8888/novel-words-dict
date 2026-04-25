@@ -44,7 +44,7 @@
 
 .filters {
   display: grid;
-  grid-template-columns: 150px 150px 150px 150px minmax(220px, 1fr) 110px;
+  grid-template-columns: 140px 140px 140px 140px minmax(260px, 1fr) 110px;
   gap: 10px;
   align-items: end;
   margin: 0 12px;

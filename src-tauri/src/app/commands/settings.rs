@@ -4,9 +4,7 @@ use tauri::Emitter;
 use tauri::{AppHandle, State};
 
 use crate::app::state::{HotkeyEnabled, HotkeyState, SettingsState};
-use crate::infra::paths::{
-    resolve_project_data_dir, sanitize_windows_verbatim_prefix,
-};
+use crate::infra::paths::{resolve_project_data_dir, sanitize_windows_verbatim_prefix};
 use crate::infra::settings::{
     default_settings, normalize_hotkey, normalize_search_engine, persist_app_settings, AppSettings,
 };

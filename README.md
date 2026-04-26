@@ -1,5 +1,5 @@
 <div align="center">
-	<h1>Chinese Novel Assistant - 中文小说写作助手</h1>
+	<h1>novel words dict - 小说词库</h1>
 	<img src="https://img.shields.io/github/downloads/pingo8888/novel-words-dict/total" alt="GitHub Downloads (all assets, all releases)" />
 	<img src="https://img.shields.io/github/license/pingo8888/novel-words-dict" alt="License">
 	<img src="https://img.shields.io/github/v/release/pingo8888/novel-words-dict" alt="GitHub release (latest by date)" />

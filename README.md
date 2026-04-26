@@ -1,3 +1,14 @@
+<div align="center">
+	<h1>Chinese Novel Assistant - 中文小说写作助手</h1>
+	<img src="https://img.shields.io/github/downloads/pingo8888/novel-words-dict/total" alt="GitHub Downloads (all assets, all releases)" />
+	<img src="https://img.shields.io/github/license/pingo8888/novel-words-dict" alt="License">
+	<img src="https://img.shields.io/github/v/release/pingo8888/novel-words-dict" alt="GitHub release (latest by date)" />
+	<img src="https://img.shields.io/github/last-commit/pingo8888/novel-words-dict" alt="GitHub last commit" />
+	<img src="https://img.shields.io/github/stars/pingo8888/novel-words-dict?style=social" alt="GitHub stars" />
+</div>
+
+---
+
 ## ✨小说词库
 开源、免费的桌面词库记录、分组、查询小工具，主要服务小说写作需要。
 

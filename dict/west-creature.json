@@ -2,6 +2,8 @@
 {"dictId":"build-in"},
 {"term":"暴龙","group":"","nameType":"creature","genderType":"both","genre":"west"},
 {"term":"梁龙","group":"","nameType":"creature","genderType":"both","genre":"west"},
+{"term":"莫比·迪克","group":"","nameType":"creature","genderType":"both","genre":"west"},
 {"term":"魏玛猎犬","group":"","nameType":"creature","genderType":"both","genre":"west"},
+{"term":"暹罗猫","group":"","nameType":"creature","genderType":"both","genre":"west"},
 {"term":"翼龙","group":"","nameType":"creature","genderType":"both","genre":"west"}
 ]

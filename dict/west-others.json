@@ -1,7 +1,13 @@
 [
 {"dictId":"build-in"},
+{"term":"《断头谷》","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"《哈姆雷特》","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"《我的金发宝贝》","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"《仲夏夜之梦》","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"福特现象","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"黑魔法","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"蝴蝶号","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"纽伦堡审判","group":"","nameType":"others","genderType":"both","genre":"west"},
+{"term":"普法战争","group":"","nameType":"others","genderType":"both","genre":"west"},
 {"term":"钱瑟勒斯维尔战役","group":"","nameType":"others","genderType":"both","genre":"west"}
 ]
